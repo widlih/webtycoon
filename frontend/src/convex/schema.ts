@@ -19,6 +19,8 @@ export default defineSchema({
 		coins: v.number(),
 		premium: v.optional(v.number()),
 		boxes: v.optional(v.number()),
+		dailyStreak: v.optional(v.number()),
+		lastDailyClaim: v.optional(v.string()),
 		energy: v.optional(v.number()),
 		energyUpdatedAt: v.optional(v.number()),
 		offerSlotsUnlocked: v.optional(v.number()),
@@ -160,6 +162,7 @@ export default defineSchema({
 		product: v.string(),
 		order: v.number(),
 		title: v.string(),
+		description: v.optional(v.string()),
 		steps: v.any(),
 		reward,
 		active: v.boolean()

@@ -36,16 +36,6 @@
 		coupon: BadgePercent,
 		premium: Gem
 	} as const;
-	const tones: Record<string, string> = {
-		coins: 'yellow',
-		energy: 'yellow',
-		xp: 'violet',
-		bonus: 'violet',
-		freelancer: 'white',
-		item: 'white',
-		coupon: 'yellow',
-		premium: 'violet'
-	};
 	type DropId = keyof typeof icons;
 	const iconFor = (id: string) => icons[id as DropId] ?? Gem;
 	const pictures: Record<string, string> = {
@@ -75,7 +65,7 @@
 			case 'energy':
 				return { title: `+${prize.amount} энергии`, text: 'Хватит на пару квизов' };
 			case 'premium':
-				return { title: `${prize.amount} премиум`, text: 'Возврат премиум-валюты' };
+				return { title: `${prize.amount} премиум`, text: 'Уже зачислены на баланс' };
 			case 'boost':
 				return prize.boost === 'freelancer'
 					? {
@@ -142,7 +132,7 @@
 		{#if data.data && owned > 0}
 			У вас боксов: <b>{owned}</b> · открываются бесплатно
 		{:else if data.data}
-			Доступно к покупке сегодня: <b>{left}</b>
+			Сегодня доступно: <b>{left}</b> из {data.data.dailyLimit}
 		{:else}
 			&nbsp;
 		{/if}
@@ -152,10 +142,6 @@
 		<img src="/img/box/box.webp" alt="" draggable="false" />
 	</div>
 
-	<p class="bx-hero__note">
-		Можно открыть {data.data?.dailyLimit ?? 5} боксов в день · открыто сегодня {data.data
-			?.openedToday ?? 0}
-	</p>
 	<Button color={canBuy ? 'yellow' : 'gray'} size="medium" disabled={!canBuy} onclick={buy}>
 		{#if busy}Открываем…{:else if owned > 0}Открыть бесплатно{:else}Купить&nbsp;<Price
 				value={price}
@@ -171,7 +157,7 @@
 	{#each data.data?.drops ?? [] as drop (drop.id)}
 		{@const Icon = iconFor(drop.id)}
 		<div class="bx-drop">
-			<span class="bx-drop__icon bx-drop__icon--{tones[drop.id] ?? 'white'}">
+			<span class="bx-drop__icon">
 				{#if pictures[drop.id]}
 					<img src={pictures[drop.id]} alt="" draggable="false" />
 				{:else}
@@ -202,7 +188,7 @@
 	<div class="app-modal" role="dialog" aria-modal="true" aria-label="Награда из бокса">
 		<div class="app-modal__box bx-result">
 			<span class="bx-result__kicker">Из бокса выпало</span>
-			<span class="bx-result__icon bx-drop__icon--{tones[result.dropId] ?? 'white'}">
+			<span class="bx-result__icon">
 				{#if pictures[result.dropId]}
 					<img src={pictures[result.dropId]} alt="" draggable="false" />
 				{:else}

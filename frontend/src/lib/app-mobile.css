@@ -3,9 +3,6 @@
 		width: calc(100% - 48px);
 		max-width: 720px;
 	}
-	.app-scene {
-		height: 56vh;
-	}
 }
 @media screen and (max-width: 1024px) {
 	.app-toolbar {
@@ -78,8 +75,6 @@
 		white-space: nowrap;
 	}
 	.app-scene {
-		height: 58vh;
-		min-height: 380px;
 		border-radius: 28px;
 	}
 	.app-scene__title {
@@ -91,10 +86,6 @@
 		display: none;
 	}
 	.app-sheet {
-		left: 8px;
-		right: 8px;
-		bottom: 8px;
-		height: 64%;
 		padding: 18px 16px;
 		border-radius: 24px;
 	}
@@ -159,5 +150,61 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		max-width: 100%;
+	}
+}
+
+/* ---------- Экран офиса ---------- */
+/* Это экран приложения, а не документ: он равен вьюпорту и не скроллится,
+   сцена забирает весь остаток места между шапкой и навигацией. Раньше сцена
+   была карточкой в жёсткие 58vh внутри скроллящейся страницы — отсюда мёртвая
+   полоса под полем и оверлеи, посчитанные в процентах от случайной высоты.
+   Правило висит на маршруте офиса: остальные экраны обязаны скроллиться.
+   Десктоп сознательно не задет. */
+@media screen and (max-width: 1024px) {
+	.app:has(.app-page--office) {
+		display: flex;
+		flex-direction: column;
+		height: 100dvh;
+		padding-bottom: 0;
+		overflow: hidden;
+		overscroll-behavior: none;
+	}
+	.app-page--office {
+		flex: 1;
+		display: flex;
+		min-height: 0; /* без этого флекс-элемент не даёт себя сжать */
+		padding-top: 12px;
+		padding-bottom: calc(var(--nav-space) + 16px);
+	}
+	.app-page--office .app-scene {
+		flex: 1;
+		height: auto;
+		min-height: 0;
+	}
+	/* Картинка офиса — в пикселях и ниже заголовка сцены (он на top: 14px).
+	   Процент от высоты сцены менял её размер каждый раз, когда Safari
+	   прячет адресную строку. */
+	.app-page--office .app-scene::before {
+		background-position: left 16px top 46px;
+		background-size: auto 52px;
+	}
+
+	/* Шторка комнаты — нижний лист экрана, а не блок внизу сцены. */
+	.app-sheet {
+		position: fixed;
+		left: 12px;
+		right: 12px;
+		bottom: calc(var(--nav-space) + 12px);
+		height: auto;
+		max-height: 52vh;
+		max-height: 52dvh;
+		/* .app-scene ставит touch-action: none ради канваса, и шторка это
+		   наследует — без этого её содержимое не листается пальцем. */
+		touch-action: pan-y;
+		overscroll-behavior: contain;
+		transform: translateY(calc(100% + 120px));
+	}
+	.app-scene.is-open .app-sheet {
+		transform: none;
 	}
 }

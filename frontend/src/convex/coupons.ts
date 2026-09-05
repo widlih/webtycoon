@@ -51,7 +51,7 @@ export const buy = mutation({
 		const code = await uniqueCouponCode(ctx);
 		await spend(ctx, {
 			playerId: player._id,
-			currency: 'coins',
+			currency: 'premium',
 			amount: template.price,
 			reason: 'coupon.buy',
 			key: `coupon:${code}`

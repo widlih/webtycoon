@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Timer, Trophy } from '@lucide/svelte';
+	import { Timer } from '@lucide/svelte';
 	import { useQuery } from 'convex-svelte';
 	import Price from '$lib/landing/Price.svelte';
 	import { api } from '../../../../convex/_generated/api';
@@ -61,12 +61,17 @@
 				<h1 class="lb-head__title">{current.title}</h1>
 				<span class="fl-timer"><Timer size={14} strokeWidth={2.25} />Итоги через {countdown(board.data.resetsAt)}</span>
 			</div>
-			<p class="lb-head__note">Очки — опыт, заработанный за период. По итогам первые три места получают монеты, премиум и боксы, таблица обнуляется.</p>
 			{#if board.data.prizes.length > 0}
 				<div class="lb-prizes">
 					{#each board.data.prizes as prize (prize.rank)}
 						<div class="lb-prize lb-prize--{prize.rank}">
-							<span class="lb-prize__rank"><Trophy size={14} strokeWidth={2.5} />{prize.rank} место</span>
+							<img
+								class="lb-prize__cup"
+								src="/img/leaderboard/cup-{prize.rank}.webp"
+								alt="{prize.rank} место"
+								width="112"
+								height="112"
+							/>
 							<span class="lb-prize__value">
 								<Price value={prize.coins} />
 								{#if prize.premium}<Price value={prize.premium} kind="premium" />{/if}

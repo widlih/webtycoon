@@ -4,15 +4,21 @@
 
 	let { step, onaction }: WidgetProps = $props();
 
-	const options = $derived(step.type === 'choose' ? step.options : []);
-	const counts = [1240, 86, 310];
+	const choose = $derived(step.type === 'choose' ? step : null);
+	const options = $derived(choose?.options ?? []);
+	const title = $derived(choose?.title ?? 'Кому отправить');
+	const fallbackCounts = ['1 240 контактов', '86 контактов', '310 контактов'];
 	let picked = $state<number | null>(null);
 </script>
 
 <div class="rs">
-	<span class="rs__label">Кому отправить</span>
+	<div class="rs__head">
+		<span class="rs__label">{title}</span>
+		{#if choose?.note}<span class="rs__label">{choose.note}</span>{/if}
+	</div>
 	<div class="rs__grid">
 		{#each options as option, i (option)}
+			{@const meta = choose?.meta?.[i] ?? fallbackCounts[i] ?? ''}
 			<button
 				class="rs__card"
 				class:is-picked={picked === i}
@@ -23,7 +29,7 @@
 			>
 				<span class="rs__icon"><Users size={16} strokeWidth={2.25} /></span>
 				<span class="rs__name">{option}</span>
-				<span class="rs__count">{counts[i] ?? 0} контактов</span>
+				{#if meta}<span class="rs__count">{meta}</span>{/if}
 			</button>
 		{/each}
 	</div>
@@ -36,6 +42,12 @@
 		font: 400 15px/140% var(--text-font);
 		color: var(--ink);
 		letter-spacing: -0.3px;
+	}
+	.rs__head {
+		display: flex;
+		justify-content: space-between;
+		gap: 12px;
+		flex-wrap: wrap;
 	}
 	.rs__label {
 		font: 400 14px/1 var(--text-font);

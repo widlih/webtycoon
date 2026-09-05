@@ -42,7 +42,7 @@
 
 	const position = $derived(hexToWorld(room.q, room.r));
 	const accent = '#a981ff';
-	const pastel = $derived('#' + new Color(accent).lerp(new Color('#ffffff'), 0.74).getHexString());
+	const pastel = $derived('#' + new Color(accent).lerp(new Color('#ffffff'), 0.66).getHexString());
 
 	const wallHeight = 2.6;
 	const wall = 0.16;
@@ -120,7 +120,7 @@
 		</T.Mesh>
 	{/if}
 	<T.Mesh geometry={tile} castShadow receiveShadow>
-		<T.MeshStandardMaterial color="#ffffff" roughness={0.9} />
+		<T.MeshStandardMaterial color="#ffffff" roughness={0.75} />
 	</T.Mesh>
 	{#each backEdges as deg (deg)}
 		{@const a = (deg * Math.PI) / 180}
@@ -133,7 +133,7 @@
 			receiveShadow
 		>
 			<T.BoxGeometry args={[tileRadius, wallHeight, wall]} />
-			<T.MeshStandardMaterial color={pastel} roughness={0.95} />
+			<T.MeshStandardMaterial color={pastel} roughness={0.82} />
 		</T.Mesh>
 		<T.Mesh
 			position={[Math.sin(a) * s, FLOOR + 0.16, Math.cos(a) * s]}
@@ -141,7 +141,7 @@
 			receiveShadow
 		>
 			<T.BoxGeometry args={[tileRadius, 0.32, 0.04]} />
-			<T.MeshStandardMaterial color={accent} roughness={0.9} />
+			<T.MeshStandardMaterial color={accent} roughness={0.7} />
 		</T.Mesh>
 	{/each}
 

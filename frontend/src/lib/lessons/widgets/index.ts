@@ -2,6 +2,7 @@ import type { Component } from 'svelte';
 import type { LessonStep } from '../../../convex/model/lessonSteps';
 import type { Action } from '../engine/validate';
 import OrderList from './common/OrderList.svelte';
+import WaSettings from './webask/Settings.svelte';
 import AudiencePicker from './rusender/AudiencePicker.svelte';
 import BlockEditor from './rusender/BlockEditor.svelte';
 import CampaignHeader from './rusender/CampaignHeader.svelte';
@@ -37,6 +38,7 @@ export const widgets: Record<string, Component<WidgetProps>> = {
 	ucDesign: UcDesignPicker,
 	ucPageBuilder: UcPageBuilder,
 	waDashboard: WaDashboard,
+	waSettings: WaSettings,
 	waQuestionType: WaQuestionType,
 	waQuestionText: WaQuestionText,
 	waLogic: WaLogic,

@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Balance from '$lib/components/Balance.svelte';
+	import DailyReward from '$lib/components/DailyReward.svelte';
 	import Nav from '$lib/components/Nav.svelte';
 	import Tooltip from '$lib/components/Tooltip.svelte';
 	import Onboarding from '$lib/onboarding/Onboarding.svelte';
@@ -47,5 +48,6 @@
 		<Nav />
 		<Tooltip />
 		<Onboarding playerId={me.data?._id ?? null} />
+		{#if me.data}<DailyReward />{/if}
 	{/if}
 </div>

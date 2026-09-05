@@ -1,7 +1,5 @@
 <script lang="ts">
 	import MarketCard from '$lib/market/MarketCard.svelte';
-	import Button from '$lib/landing/Button.svelte';
-	import Price from '$lib/landing/Price.svelte';
 	import { useMutation, useQuery } from 'convex-svelte';
 	import { api } from '../../convex/_generated/api';
 	import { PRODUCT_TITLES, PRODUCTS } from '../../convex/model/constants';
@@ -10,7 +8,6 @@
 	const templates = useQuery(api.coupons.templates, {});
 	const buy = useMutation(api.coupons.buy);
 
-	let confirming = $state<string | null>(null);
 	let error = $state('');
 	let busy = $state(false);
 	let lastCode = $state<{ slug: string; code: string } | null>(null);
@@ -25,7 +22,6 @@
 	);
 
 	async function purchase(slug: string) {
-		confirming = null;
 		error = '';
 		busy = true;
 		try {
@@ -48,32 +44,16 @@
 				title={t.title}
 				image={`/img/coupons/${t.product}.webp`}
 				big={t.discount}
-				text="Скидка {t.discount} · действует {t.ttlDays} дней"
-				price={confirming === t.slug ? undefined : t.price}
+				text="Действует {t.ttlDays} дней"
+				price={t.price}
 				currency="premium"
 				disabled={busy || !affordable}
 				class="mk-card--figure"
-				onbuy={() => (confirming = t.slug)}
+				onbuy={() => purchase(t.slug)}
 			>
 				{#if lastCode?.slug === t.slug}
 					<span class="mk-code">{lastCode.code}</span>
 				{/if}
-				{#snippet foot()}
-					{#if confirming === t.slug}
-						<p class="mk-card__hint">
-							Списать <Price value={t.price} kind="premium" />, останется <Price
-								value={premium - t.price}
-								kind="premium"
-							/>
-						</p>
-						<div class="mk-card__row">
-							<Button color="gray" size="small" onclick={() => (confirming = null)}>Отмена</Button>
-							<Button color="black" size="small" disabled={busy} onclick={() => purchase(t.slug)}>
-								Купить
-							</Button>
-						</div>
-					{/if}
-				{/snippet}
 			</MarketCard>
 		{/each}
 	</div>

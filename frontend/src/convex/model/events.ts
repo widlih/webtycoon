@@ -30,6 +30,7 @@ export type GameEvent =
 	| { type: 'coupon.bought'; templateSlug: string; product: string }
 	| { type: 'quest.claimed'; questSlug: string }
 	| { type: 'box.opened'; dropId: string }
+	| { type: 'daily.claimed'; day: number; streak: number }
 	| { type: 'external.action'; source: string; action: string }
 	| { type: 'referral.completed'; referredId: Id<'players'> };
 

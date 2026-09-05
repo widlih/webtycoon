@@ -13,6 +13,7 @@
 		<p class="app-hint">Загрузка…</p>
 	{:else if lesson.data}
 		<h1 class="lesson-title">{lesson.data.title}</h1>
+		{#if lesson.data.description}<p class="lesson-lead">{lesson.data.description}</p>{/if}
 		<Lesson lesson={{ slug: lesson.data.slug, steps: lesson.data.steps as LessonStep[] }} />
 	{:else}
 		<p class="app-hint">Урок не найден</p>

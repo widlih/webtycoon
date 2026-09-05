@@ -95,17 +95,14 @@
 
 			<div class="ob__art" aria-hidden="true">
 				{#key onboarding.index}
-					<div class="ob__coins">
-						{#each slide.art as coin, i (i)}
-							<span
-								class="ob__coin ob__coin--{coin.color}"
-								style="--s:{coin.size}px; --x:{coin.x}%; --y:{coin.y}%; --rot:{coin.rot ??
-									0}deg; --d:{i * 0.12}s; --fd:{i * 0.55}s"
-							>
-								<coin.icon size={Math.round(coin.size * 0.46)} strokeWidth={2.25} />
-							</span>
-						{/each}
-					</div>
+					<img
+						class="ob__img"
+						src="/img/onboarding/{slide.art}.webp"
+						alt=""
+						width="760"
+						height="472"
+						fetchpriority="high"
+					/>
 				{/key}
 			</div>
 
@@ -194,85 +191,25 @@
 	.ob__art {
 		position: relative;
 		height: 236px;
-		background: radial-gradient(120% 90% at 50% 100%, #ffffff00 40%, #ffffff80 100%), var(--gray);
+		background: var(--gray);
 		overflow: hidden;
 	}
-	.ob__coins {
+	.ob__img {
 		position: absolute;
 		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		animation: ob-art-in 0.42s var(--quad) both;
 	}
-	.ob__coin {
-		position: absolute;
-		left: var(--x);
-		top: var(--y);
-		width: var(--s);
-		height: var(--s);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 50%;
-		translate: -50% -50%;
-		rotate: var(--rot);
-		box-shadow:
-			inset 0 0 0 calc(var(--s) * 0.07) #ffffff59,
-			inset 0 calc(var(--s) * -0.08) calc(var(--s) * 0.16) #00000024,
-			inset 0 calc(var(--s) * 0.06) calc(var(--s) * 0.12) #ffffff8c,
-			0 calc(var(--s) * 0.16) calc(var(--s) * 0.26) calc(var(--s) * -0.08) #19171c59;
-		animation:
-			ob-pop 0.55s var(--spring) var(--d) both,
-			ob-float 3.4s ease-in-out calc(var(--d) + var(--fd)) infinite;
-	}
-	.ob__coin::after {
-		content: '';
-		position: absolute;
-		inset: calc(var(--s) * 0.16);
-		border-radius: 50%;
-		border: calc(var(--s) * 0.02) solid #ffffff40;
-		pointer-events: none;
-	}
-	.ob__coin :global(svg) {
-		position: relative;
-		z-index: 1;
-		filter: drop-shadow(0 2px 2px #0000001f);
-	}
-	.ob__coin--violet {
-		background: radial-gradient(circle at 32% 28%, #dccbff 0%, var(--violet) 48%, #8b5ee6 100%);
-		color: #fff;
-	}
-	.ob__coin--yellow {
-		background: radial-gradient(circle at 32% 28%, #fdffb3 0%, var(--yellow) 48%, #cdd82a 100%);
-		color: var(--ink);
-	}
-	.ob__coin--silver {
-		background: radial-gradient(circle at 32% 28%, #ffffff 0%, #e4e3e8 48%, #b9b8c0 100%);
-		color: var(--secondary);
-	}
-	.ob__coin--blue {
-		background: radial-gradient(circle at 32% 28%, #e3ecff 0%, #b9cfff 48%, #7c9ff0 100%);
-		color: #fff;
-	}
-	.ob__coin--ink {
-		background: radial-gradient(circle at 32% 28%, #4a4750 0%, #2a272f 48%, var(--ink) 100%);
-		color: #fff;
-	}
-
-	@keyframes ob-pop {
+	@keyframes ob-art-in {
 		from {
-			scale: 0.4;
 			opacity: 0;
+			scale: 1.04;
 		}
 		to {
-			scale: 1;
 			opacity: 1;
-		}
-	}
-	@keyframes ob-float {
-		0%,
-		100% {
-			translate: -50% -50%;
-		}
-		50% {
-			translate: -50% calc(-50% - 7px);
+			scale: 1;
 		}
 	}
 
@@ -371,7 +308,7 @@
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.ob__coin,
+		.ob__img,
 		.ob__content {
 			animation: none;
 		}

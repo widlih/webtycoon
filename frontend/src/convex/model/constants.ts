@@ -117,5 +117,13 @@ export const BONUS_MULTIPLIER = 2;
 
 export const OFFER_SLOTS_MAX = 5;
 export const OFFER_SLOTS_START = 2;
-export const OFFER_SLOT_PRICES = [0, 0, 400, 900, 2000];
+export type OfferSlotPrice = { currency: 'coins' | 'premium'; amount: number };
+/** Цена открытия слота заказов по его индексу. Последний слот продаётся за премиум */
+export const OFFER_SLOT_PRICES: OfferSlotPrice[] = [
+	{ currency: 'coins', amount: 0 },
+	{ currency: 'coins', amount: 0 },
+	{ currency: 'coins', amount: 400 },
+	{ currency: 'coins', amount: 900 },
+	{ currency: 'premium', amount: 20 }
+];
 export const OFFER_COOLDOWN_MS = 4 * 60 * 1000;

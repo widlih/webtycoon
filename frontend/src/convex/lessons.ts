@@ -18,6 +18,7 @@ export const list = query({
 			.map((l) => ({
 				slug: l.slug,
 				title: l.title,
+				description: l.description,
 				order: l.order,
 				reward: l.reward,
 				steps: l.steps,
@@ -48,6 +49,7 @@ export const get = query({
 			slug: lesson.slug,
 			product: lesson.product,
 			title: lesson.title,
+			description: lesson.description,
 			steps: lesson.steps,
 			reward: lesson.reward,
 			completed: done.has(lesson.slug)

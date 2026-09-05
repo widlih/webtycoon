@@ -13,12 +13,20 @@
 
 <div class="wg">
 	<div class="wg__bar">
-		<span class="wg__title">Мои опросы</span>
+		<div class="wg__head">
+			<span class="wg__title">Мои опросы</span>
+			<span class="wg__note">Активные принимают ответы, черновики ещё не опубликованы</span>
+		</div>
 		<div class="wg__actions">
-			<button class="wg__btn" onclick={() => onaction({ kind: 'click', value: 'templates' })}>
+			<button
+				type="button"
+				class="wg__btn"
+				onclick={() => onaction({ kind: 'click', value: 'templates' })}
+			>
 				<LayoutTemplate size={14} strokeWidth={2.25} /> Шаблоны
 			</button>
 			<button
+				type="button"
 				class="wg__btn wg__btn--primary"
 				onclick={() => onaction({ kind: 'click', value: 'create' })}
 			>

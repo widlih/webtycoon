@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { Canvas } from '@threlte/core';
 	import { MousePointerClick } from '@lucide/svelte';
-	import { ACESFilmicToneMapping } from 'three';
+	import { NeutralToneMapping } from 'three';
 	import { Music, Package, VolumeX } from '@lucide/svelte';
 	import { ordersUi } from './orders.svelte';
 	import { isMusicOn, toggleMusic } from '$lib/fx/music.svelte';
@@ -35,12 +35,14 @@
 	} = $props();
 
 	let width = $state(0);
-	let height = $state(0);
+	// Реальная высота шторки: она перестала быть фиксированной долей сцены,
+	// поэтому сдвиг камеры считаем от того, что действительно закрыто.
+	let sheetHeight = $state(0);
 
 	const open = $derived(Boolean(selectedRoomId || selectedHex));
 	const desktop = $derived(width >= 1025);
 	const shiftX = $derived(open && desktop ? (380 + 32) / 2 : 0);
-	const shiftY = $derived(open && !desktop ? (height * 0.6 + 16) / 2 : 0);
+	const shiftY = $derived(open && !desktop ? (sheetHeight + 16) / 2 : 0);
 </script>
 
 <div
@@ -48,9 +50,8 @@
 	class:is-open={open}
 	style="--scene-bg: url(/img/offices/tier-{view.tier.tier}.webp)"
 	bind:clientWidth={width}
-	bind:clientHeight={height}
 >
-	<Canvas shadows dpr={[1, 2]} toneMapping={ACESFilmicToneMapping}>
+	<Canvas shadows dpr={[1, 2]} toneMapping={NeutralToneMapping}>
 		<Hub
 			{view}
 			{selectedRoomId}
@@ -63,6 +64,10 @@
 		/>
 	</Canvas>
 	{#if title}<p class="app-scene__title">{title}</p>{/if}
+	<div
+		class="app-scene__office"
+		data-tip="Уровень офиса задаёт число комнат и слотов под полезные предметы. Офис побольше продаётся в маркете"
+	></div>
 	<PayrollNote />
 	<button
 		class="app-iconbtn app-scene__music"
@@ -93,7 +98,7 @@
 	{#if !open}
 		{@render tray?.()}
 	{/if}
-	<div class="app-sheet">
+	<div class="app-sheet" bind:clientHeight={sheetHeight}>
 		{#if open}
 			{@render panel?.()}
 		{/if}
@@ -101,6 +106,22 @@
 </div>
 
 <style>
+	.app-scene__office {
+		position: absolute;
+		left: 4%;
+		top: 12%;
+		height: 32%;
+		aspect-ratio: 1 / 1;
+		z-index: 10;
+	}
+	/* Зона подсказки повторяет картинку офиса: на телефоне она задана в пикселях */
+	@media screen and (max-width: 1024px) {
+		.app-scene__office {
+			left: 16px;
+			top: 46px;
+			height: 52px;
+		}
+	}
 	.app-scene__inventory {
 		position: absolute;
 		top: 64px;

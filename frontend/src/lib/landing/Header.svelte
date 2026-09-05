@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { Menu, X } from '@lucide/svelte';
 	import Button from './Button.svelte';
 
@@ -76,11 +77,13 @@
 		<div class="lp-header__right">
 			<div class="lp-container">
 				<div class="lp-header__buttons">
-					<div class="lp-header__pre">
-						<Button href={resolve('/login')} color="black" size="small" class="lp-header__cta"
-							>Войти</Button
-						>
-					</div>
+					{#if !page.url.pathname.startsWith('/login')}
+						<div class="lp-header__pre">
+							<Button href={resolve('/login')} color="black" size="small" class="lp-header__cta"
+								>Войти</Button
+							>
+						</div>
+					{/if}
 					<div class="lp-header__burger-wrap">
 						<Button
 							color="white"
@@ -114,9 +117,11 @@
 								>
 							</li>
 						{/each}
-						<li class="lp-menu__item">
-							<a class="lp-menu__link" href={resolve('/login')}>Войти</a>
-						</li>
+						{#if !page.url.pathname.startsWith('/login')}
+							<li class="lp-menu__item">
+								<a class="lp-menu__link" href={resolve('/login')}>Войти</a>
+							</li>
+						{/if}
 					</ul>
 				</div>
 			</div>

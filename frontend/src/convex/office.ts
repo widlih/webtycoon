@@ -66,6 +66,20 @@ export const state = query({
 		const workers = (await ctx.db.query('workers').collect())
 			.filter((w) => w.active && !hired.has(w.slug))
 			.sort((a, b) => a.order - b.order);
+		// Продукт открыт, если по нему есть хотя бы один активный урок
+		const products = await Promise.all(
+			PRODUCTS.map(async (slug) => {
+				const lessons = await ctx.db
+					.query('lessons')
+					.withIndex('by_product', (q) => q.eq('product', slug))
+					.collect();
+				return {
+					slug,
+					title: PRODUCT_TITLES[slug],
+					unlocked: lessons.some((l) => l.active)
+				};
+			})
+		);
 		return {
 			office,
 			tier: tierInfo(office.tier),
@@ -76,11 +90,7 @@ export const state = query({
 			nextTier: OFFICE_TIERS.find((t) => t.tier === office.tier + 1) ?? null,
 			catalog: await ctx.db.query('items').collect(),
 			workers,
-			products: PRODUCTS.map((slug) => ({
-				slug,
-				title: PRODUCT_TITLES[slug],
-				unlocked: slug === 'rusender'
-			}))
+			products
 		};
 	}
 });

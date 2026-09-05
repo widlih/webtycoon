@@ -2,17 +2,16 @@
 	import BoostsTab from '$lib/market/BoostsTab.svelte';
 	import BoxTab from '$lib/market/BoxTab.svelte';
 	import CouponsTab from '$lib/market/CouponsTab.svelte';
-	import MyCoupons from '$lib/market/MyCoupons.svelte';
 	import OfficesTab from '$lib/market/OfficesTab.svelte';
 	import RoomsTab from '$lib/market/RoomsTab.svelte';
 	import WorkersTab from '$lib/market/WorkersTab.svelte';
 
 	const tabs = [
 		{ value: 'offices', label: 'Офисы' },
-		{ value: 'rooms', label: 'Комнаты' },
+		{ value: 'rooms', label: 'Интерьер' },
 		{ value: 'boosts', label: 'Ускорители' },
-		{ value: 'box', label: 'Бокс' },
 		{ value: 'workers', label: 'Сотрудники' },
+		{ value: 'box', label: 'Бокс' },
 		{ value: 'coupons', label: 'Купоны' }
 	] as const;
 	type Tab = (typeof tabs)[number]['value'];
@@ -47,6 +46,5 @@
 		<WorkersTab />
 	{:else if tab === 'coupons'}
 		<CouponsTab />
-		<MyCoupons />
 	{/if}
 </main>

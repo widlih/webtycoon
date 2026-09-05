@@ -93,7 +93,7 @@
 	}
 </script>
 
-<main class="lp-container app-page">
+<main class="lp-container app-page app-page--office">
 	{#if office.isLoading}
 		<p class="app-hint">Загрузка офиса…</p>
 	{:else if office.error}

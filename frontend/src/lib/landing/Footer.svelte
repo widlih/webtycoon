@@ -21,7 +21,17 @@
 			<div class="lp-footer__grid">
 				<div class="lp-footer__top">
 					<h2 class="lp-footer__title">{title}</h2>
-					<p class="lp-footer__text">{text}</p>
+					<p class="lp-footer__text">
+						{text}
+						<img
+							class="lp-footer__emoji"
+							src="/img/landing/wink.webp"
+							alt=""
+							width="450"
+							height="450"
+							loading="lazy"
+						/>
+					</p>
 					<div class="lp-footer__cta">
 						<Button href={resolve('/login')} color="black" size="medium">{cta}</Button>
 					</div>

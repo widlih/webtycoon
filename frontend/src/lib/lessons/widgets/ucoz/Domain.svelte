@@ -1,55 +1,69 @@
 <script lang="ts">
-	import { Globe } from '@lucide/svelte';
+	import { Clock, Globe, Server, ShieldCheck } from '@lucide/svelte';
+	import Choices from '../common/Choices.svelte';
 	import type { WidgetProps } from '..';
 
 	let { step, onaction, wrong }: WidgetProps = $props();
 
-	const options = $derived(step.type === 'choose' ? step.options : []);
+	const choose = $derived(step.type === 'choose' ? step : null);
+	const input = $derived(step.type === 'input' ? step : null);
+	const title = $derived(step.title ?? 'Домены и SSL · Управление доменами');
+	const note = $derived(
+		step.note ?? 'Домен покупают у регистратора, а здесь прикрепляют к сайту на uCoz'
+	);
+
+	const icons: Array<[RegExp, typeof Globe]> = [
+		[/ns\d|сервер/i, Server],
+		[/подожд|час|dns/i, Clock],
+		[/ssl|сертифик/i, ShieldCheck]
+	];
+	const iconFor = (text: string) => icons.find(([re]) => re.test(text))?.[1] ?? Globe;
+
 	let domain = $state('');
-	let picked = $state<number | null>(null);
+	let attached = $state(false);
 </script>
 
 <div class="wg">
-	<span class="wg__title">Настройки · Перенос домена</span>
+	<div class="wg__head">
+		<span class="wg__title">{title}</span>
+		<span class="wg__note">{note}</span>
+	</div>
 	<div class="wg__panel">
 		<label class="wg__field">
 			<span class="wg__label">Ваш домен</span>
 			<input
 				class="wg__input"
-				class:is-wrong={wrong && step.type === 'input'}
-				disabled={step.type !== 'input'}
+				class:is-active={Boolean(input)}
+				class:is-wrong={wrong && Boolean(input)}
+				disabled={!input}
 				bind:value={domain}
 				oninput={() => onaction({ kind: 'input', value: domain })}
-				placeholder="например, ulybka-dental.ru"
+				placeholder={input?.placeholder ?? 'ulybka-dental.ru'}
 				maxlength="60"
 			/>
+			<span class="wg__help">
+				Только имя домена: без https://, слэшей и пробелов. Так uCoz поймёт, какой адрес ждать.
+			</span>
 		</label>
-		<span class="wg__muted">
-			У регистратора укажите NS-серверы uCoz. Делегирование зоны .ru занимает до 9 часов, .рф до 2
-			часов.
-		</span>
-		{#if step.type === 'choose'}
-			<div class="wg__grid">
-				{#each options as option, i (option)}
-					<button
-						class="wg__card"
-						class:is-picked={picked === i}
-						onclick={() => {
-							picked = i;
-							onaction({ kind: 'choose', value: i });
-						}}
-					>
-						<span class="wg__icon"><Globe size={16} strokeWidth={2.25} /></span>
-						<span class="wg__name">{option}</span>
-					</button>
-				{/each}
-			</div>
+
+		{#if choose}
+			<Choices
+				options={choose.options}
+				meta={choose.meta ?? []}
+				icon={iconFor}
+				onpick={(i) => onaction({ kind: 'choose', value: i })}
+			/>
 		{/if}
+
 		<div class="wg__bar">
-			<span class="wg__muted">К сайту можно прикрепить до 5 доменов</span>
+			<span class="wg__muted">На бесплатном тарифе один домен, на платных до пяти</span>
 			<button
+				type="button"
 				class="wg__btn wg__btn--primary"
-				onclick={() => onaction({ kind: 'click', value: 'attach' })}>Прикрепить домен</button
+				onclick={() => {
+					attached = true;
+					onaction({ kind: 'click', value: 'attach' });
+				}}>{attached ? 'Домен прикреплён' : 'Прикрепить домен'}</button
 			>
 		</div>
 	</div>

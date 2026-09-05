@@ -13,7 +13,10 @@
 
 <div class="rs">
 	<div class="rs__bar">
-		<span class="rs__title">Рассылки</span>
+		<div>
+			<span class="rs__title">Рассылки</span>
+			<div class="rs__muted">Все рассылки кофейни: отправленные, черновики и запланированные</div>
+		</div>
 		<div class="rs__actions">
 			<button
 				class="rs__btn rs__btn--ghost"

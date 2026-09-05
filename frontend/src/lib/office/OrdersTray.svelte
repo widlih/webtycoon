@@ -123,7 +123,12 @@
 			await unlock({});
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
-			unlockError = message.includes('INSUFFICIENT_FUNDS') ? 'Не хватает монет' : message;
+			const premium = data.data?.nextPrice?.currency === 'premium';
+			unlockError = message.includes('INSUFFICIENT_FUNDS')
+				? premium
+					? 'Не хватает премиума'
+					: 'Не хватает монет'
+				: message;
 			setTimeout(() => (unlockError = ''), 2500);
 		}
 	}
@@ -134,7 +139,13 @@
 		<div class="tray__toast app-tag">{unlockError}</div>
 	{/if}
 	<div class="tray__cards">
-		<img class="tray__sign" src="/img/divly-sign.webp" alt="divly" draggable="false" />
+		<img
+			class="tray__sign"
+			src="/img/divly-sign.webp"
+			alt="divly"
+			draggable="false"
+			data-tip="Divly: сайт студии, где клиенты оставляют заказы. Берите их в работу и получайте награду"
+		/>
 		{#each data.data?.slots ?? [] as slot (slot._id)}
 			{#if slot.offer}
 				{@const ProductIcon = productIcons[slot.offer.product as keyof typeof productIcons] ?? Send}
@@ -201,14 +212,17 @@
 		{#if data.data}
 			{#each Array.from({ length: data.data.max - data.data.unlocked }, (_, k) => k) as i (i)}
 				{#if i === 0 && data.data.nextPrice !== null}
+					{@const price = data.data.nextPrice}
 					<button
 						type="button"
 						class="card card--lock card--next"
-						data-tip="Открыть ещё один слот заказов"
+						data-tip={price.currency === 'premium'
+							? 'Открыть последний слот заказов за премиум'
+							: 'Открыть ещё один слот заказов'}
 						onclick={buySlot}
 					>
 						<Lock size={18} strokeWidth={2.25} />
-						<Price value={data.data.nextPrice} />
+						<span class="card__price"><Price value={price.amount} kind={price.currency} /></span>
 					</button>
 				{:else}
 					<div class="card card--lock" data-tip="Откроется после покупки предыдущего слота">
@@ -259,7 +273,7 @@
 		height: 120px;
 		object-fit: contain;
 		object-position: center bottom;
-		pointer-events: none;
+		pointer-events: auto;
 		user-select: none;
 	}
 	.card {
@@ -394,7 +408,9 @@
 	.card--lock {
 		min-width: 0;
 		overflow: hidden;
+		align-items: center;
 		justify-content: center;
+		gap: 6px;
 		background: transparent;
 		box-shadow: none;
 		border: 1.5px dashed #b8b8be;
@@ -404,6 +420,16 @@
 		border-color: var(--muted, #8a8a90);
 		color: var(--ink, #111);
 		cursor: pointer;
+		transition: border-color 0.2s var(--quad, ease-out);
+	}
+	.card__price {
+		display: inline-flex;
+		justify-content: center;
+	}
+	.card__price :global(.app-price) {
+		gap: 6px;
+		font: 700 18px/1 var(--display, system-ui);
+		letter-spacing: -0.36px;
 	}
 	.card--next:hover {
 		border-color: var(--ink, #111);

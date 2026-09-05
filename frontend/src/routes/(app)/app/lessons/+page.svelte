@@ -19,9 +19,7 @@
 			...lesson,
 			index: i,
 			state: (lesson.completed ? 'done' : i === firstOpen ? 'open' : 'locked') as
-				| 'done'
-				| 'open'
-				| 'locked'
+				'done' | 'open' | 'locked'
 		}));
 		const rank = { open: 0, locked: 1, done: 2 } as const;
 		return list.sort((x, y) => rank[x.state] - rank[y.state] || x.index - y.index);
@@ -51,17 +49,17 @@
 	{:else if lessons.data}
 		<div class="mk-grid mk-grid--compact">
 			{#each ordered as lesson (lesson.slug)}
-				<MarketCard
-					title={lesson.title}
-					compact
-					class="ls-card ls-card--{lesson.state}"
-				>
+				<MarketCard title={lesson.title} compact class="ls-card ls-card--{lesson.state}">
 					{#snippet media()}
-						{#if lesson.state === 'locked'}<Lock size={12} strokeWidth={2.5} />{:else if lesson.state === 'done'}<Check
+						{#if lesson.state === 'locked'}<Lock
 								size={12}
-								strokeWidth={3}
-							/>{/if}Урок {lesson.index + 1}{lesson.state === 'done' ? ' · пройден' : ''}
+								strokeWidth={2.5}
+							/>{:else if lesson.state === 'done'}<Check size={12} strokeWidth={3} />{/if}Урок {lesson.index +
+							1}{lesson.state === 'done' ? ' · пройден' : ''}
 					{/snippet}
+					{#if lesson.description}<p class="mk-card__text ls-card__lead">
+							{lesson.description}
+						</p>{/if}
 					<p class="mk-card__text">
 						<Price value={lesson.reward.coins} prefix="+" /> · <Price
 							value={lesson.reward.xp}

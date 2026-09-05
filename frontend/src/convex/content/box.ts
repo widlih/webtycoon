@@ -72,7 +72,7 @@ export const BOX_DROPS: BoxDropEntry[] = [
 		id: 'premium',
 		weight: 5,
 		title: '3–10 премиум',
-		text: 'Возврат премиум-валюты',
+		text: 'Премиум-валюта сразу на баланс',
 		drop: { kind: 'premium', min: 3, max: 10 }
 	}
 ];

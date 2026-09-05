@@ -6,6 +6,7 @@
 	import { onboarding } from '$lib/onboarding/state.svelte';
 	import Price from '$lib/landing/Price.svelte';
 	import MarketCard from '$lib/market/MarketCard.svelte';
+	import MyCoupons from '$lib/market/MyCoupons.svelte';
 	import { authClient } from '$lib/auth';
 	import { useQuery } from 'convex-svelte';
 	import { api } from '../../../../convex/_generated/api';
@@ -86,6 +87,8 @@
 				</MarketCard>
 			{/each}
 		</div>
+
+		<MyCoupons />
 
 		<h2 class="mk-h">Ачивки</h2>
 		<p class="mk-sub">Открыто {unlockedCount} из {achievements.data?.length ?? 0}</p>

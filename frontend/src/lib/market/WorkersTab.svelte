@@ -33,9 +33,6 @@
 	}
 </script>
 
-<p class="app-muted mk-note" style="margin-top:0;margin-bottom:20px">
-	Нанятый сотрудник появится в инвентаре на сцене офиса, перетащите его на свободный стол.
-</p>
 <div class="mk-grid">
 	{#each sorted as w (w.slug)}
 		{@const affordable = coins >= w.price}

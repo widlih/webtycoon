@@ -29,7 +29,23 @@
 	const step = $derived(lesson.steps[index]);
 	const Widget = $derived(widgets[step.widget]);
 
+	/** Какое действие ждёт шаг. Остальные клики по виджету не считаются ответом */
+	const expectedKind: Record<LessonStep['type'], Action['kind']> = {
+		click: 'click',
+		drag: 'drop',
+		input: 'input',
+		choose: 'choose',
+		order: 'order'
+	};
+
 	function onaction(next: Action) {
+		if (next.kind !== expectedKind[step.type]) {
+			// Кнопка виджета на шаге ввода («Сохранить», «Опубликовать») работает как «Проверить»
+			if (next.kind === 'click' && (step.type === 'input' || step.type === 'choose') && action) {
+				check();
+			}
+			return;
+		}
 		action = next;
 		wrong = false;
 		if (isInstant(step)) check();

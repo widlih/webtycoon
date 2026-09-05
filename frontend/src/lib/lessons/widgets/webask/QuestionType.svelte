@@ -1,38 +1,48 @@
 <script lang="ts">
 	import {
 		AlignLeft,
+		Calendar,
 		CircleDot,
 		Gauge,
 		Grid3x3,
 		ListChecks,
 		SlidersHorizontal,
-		Star
+		Star,
+		Upload
 	} from '@lucide/svelte';
+	import Choices from '../common/Choices.svelte';
 	import type { WidgetProps } from '..';
 
 	let { step, onaction }: WidgetProps = $props();
 
-	const options = $derived(step.type === 'choose' ? step.options : []);
-	const icons = [CircleDot, ListChecks, SlidersHorizontal, Gauge, Grid3x3, AlignLeft, Star];
-	let picked = $state<number | null>(null);
+	const choose = $derived(step.type === 'choose' ? step : null);
+	const title = $derived(choose?.title ?? 'Новый вопрос · Тип');
+	const note = $derived(choose?.note ?? 'От типа зависит, как респондент будет отвечать');
+
+	const icons: Array<[RegExp, typeof CircleDot]> = [
+		[/nps/i, Gauge],
+		[/шкал/i, SlidersHorizontal],
+		[/матриц/i, Grid3x3],
+		[/открыт|текст/i, AlignLeft],
+		[/файл/i, Upload],
+		[/дата/i, Calendar],
+		[/рейтинг|звёзд/i, Star],
+		[/нескольк/i, ListChecks]
+	];
+	const iconFor = (text: string) => icons.find(([re]) => re.test(text))?.[1] ?? CircleDot;
 </script>
 
 <div class="wg">
-	<span class="wg__title">Добавить вопрос</span>
-	<div class="wg__grid">
-		{#each options as option, i (option)}
-			{@const Icon = icons[i % icons.length]}
-			<button
-				class="wg__card"
-				class:is-picked={picked === i}
-				onclick={() => {
-					picked = i;
-					onaction({ kind: 'choose', value: i });
-				}}
-			>
-				<span class="wg__icon"><Icon size={16} strokeWidth={2.25} /></span>
-				<span class="wg__name">{option}</span>
-			</button>
-		{/each}
+	<div class="wg__head">
+		<span class="wg__title">{title}</span>
+		<span class="wg__note">{note}</span>
 	</div>
+	{#if choose}
+		<Choices
+			options={choose.options}
+			meta={choose.meta ?? []}
+			icon={iconFor}
+			onpick={(i) => onaction({ kind: 'choose', value: i })}
+		/>
+	{/if}
 </div>

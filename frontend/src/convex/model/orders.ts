@@ -145,8 +145,8 @@ export async function unlockSlot(ctx: MutationCtx, player: Doc<'players'>) {
 	const price = OFFER_SLOT_PRICES[unlocked];
 	await spend(ctx, {
 		playerId: player._id,
-		currency: 'coins',
-		amount: price,
+		currency: price.currency,
+		amount: price.amount,
 		reason: 'offerSlot.unlock',
 		key: `offerSlot:${player._id}:${unlocked}`
 	});

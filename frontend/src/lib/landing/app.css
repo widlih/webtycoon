@@ -1,4 +1,7 @@
 .app {
+	/* Сколько снизу занимает фиксированная навигация: полоса 60 + её отступ 15
+	   плюс вырез экрана. Раньше это число было зашито в двух разных местах. */
+	--nav-space: calc(75px + env(safe-area-inset-bottom, 0px));
 	padding-bottom: 110px;
 	background: var(--bg);
 }
@@ -169,7 +172,6 @@
 	border-radius: 40px;
 	overflow: hidden;
 	background: var(--gray);
-	height: 52vh;
 	touch-action: none;
 	user-select: none;
 }
@@ -180,6 +182,7 @@
 	background: var(--scene-bg, none) no-repeat left 4% top 12% / auto 32%;
 	pointer-events: none;
 }
+
 .app-hint {
 	color: var(--secondary);
 	text-align: center;
@@ -835,13 +838,10 @@
 }
 .lp-btn svg.lucide {
 	fill: none;
-	margin: 0 8px 0 0;
-}
-.lp-btn svg.lucide:last-child {
-	margin: 0 0 0 8px;
-}
-.lp-btn svg.lucide:only-child {
 	margin: 0;
+}
+.lp-btn .lp-btn__inner {
+	gap: 8px;
 }
 .app-pill svg.lucide {
 	color: var(--ink);
@@ -1427,7 +1427,8 @@
 .fx-star {
 	width: 18px;
 	height: 18px;
-	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a981ff' stroke='%2319171c' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M12 2l3.1 6.6 7.2.9-5.3 5 1.4 7.2L12 18.2 5.6 21.7 7 14.5l-5.3-5 7.2-.9z'/%3E%3C/svg%3E") center / contain no-repeat;
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a981ff' stroke='%2319171c' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M12 2l3.1 6.6 7.2.9-5.3 5 1.4 7.2L12 18.2 5.6 21.7 7 14.5l-5.3-5 7.2-.9z'/%3E%3C/svg%3E")
+		center / contain no-repeat;
 }
 .fx-confetti {
 	width: 8px;
@@ -1779,7 +1780,9 @@
 }
 .fl-dot.is-done {
 	transform: scale(1.12);
-	box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--ink);
+	box-shadow:
+		0 0 0 3px #fff,
+		0 0 0 5px var(--ink);
 }
 .fl-timer {
 	display: inline-flex;
@@ -2016,31 +2019,28 @@
 .lb-prize {
 	background: #fff;
 	border-radius: 18px;
-	padding: 12px 14px;
-	display: grid;
-	gap: 6px;
-}
-.lb-prize__rank {
-	display: inline-flex;
+	padding: 10px 14px 10px 10px;
+	display: flex;
 	align-items: center;
-	gap: 6px;
-	color: var(--secondary);
-	font: 600 12px/1 var(--display);
+	gap: 10px;
 }
-.lb-prize--1 .lb-prize__rank {
-	color: #b8860b;
+.lb-prize__cup {
+	flex: none;
+	width: 56px;
+	height: 56px;
+	object-fit: contain;
 }
-.lb-prize--2 .lb-prize__rank {
-	color: #6e6e73;
-}
-.lb-prize--3 .lb-prize__rank {
-	color: #b5651d;
+/* Первое место крупнее — статус читается размером, а не подписью. */
+.lb-prize--1 .lb-prize__cup {
+	width: 64px;
+	height: 64px;
 }
 .lb-prize__value {
 	display: flex;
-	gap: 10px;
+	flex-wrap: wrap;
+	gap: 4px 10px;
 	color: var(--ink);
-	font: 700 15px/1 var(--display);
+	font: 600 15px/1 var(--display);
 }
 .lb-row__left,
 .lb-row__right {
@@ -2151,10 +2151,21 @@
 	width: 100%;
 	height: auto;
 }
+.bx-drop__icon,
+.bx-result__icon {
+	width: 104px;
+	height: 104px;
+	border-radius: 0;
+	background: transparent;
+}
+.bx-result__icon {
+	width: 140px;
+	height: 140px;
+}
 .bx-drop__icon img,
 .bx-result__icon img {
-	width: 78%;
-	height: 78%;
+	width: 100%;
+	height: 100%;
 	object-fit: contain;
 }
 
@@ -2271,4 +2282,243 @@
 }
 .bx-result__row .lp-btn {
 	flex: 1;
+}
+
+/* ---------- Daily reward ---------- */
+.app-pill--gift {
+	appearance: none;
+	border: 0;
+	cursor: pointer;
+	position: relative;
+	padding: 0 12px;
+	transition: background-color 0.2s var(--quad);
+}
+.app-pill--gift:hover {
+	background: #e5e4e7;
+}
+.app-pill--gift.is-ready {
+	background: var(--yellow);
+}
+.app-pill__dot {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: var(--ink);
+	animation: dr-pulse 1.6s ease-in-out infinite;
+}
+@keyframes dr-pulse {
+	0%,
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	50% {
+		transform: scale(1.35);
+		opacity: 0.6;
+	}
+}
+
+.dr {
+	position: fixed;
+	inset: 0;
+	z-index: 35;
+	background: #19171c80;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+}
+.dr__card {
+	position: relative;
+	background: #fff;
+	border-radius: 40px 40px 0 0;
+	width: 100%;
+	max-width: 560px;
+	padding: 34px 26px 26px;
+	max-height: 92vh;
+	overflow: auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+}
+.dr__close {
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	appearance: none;
+	border: 0;
+	cursor: pointer;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background: var(--gray);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+.dr__art {
+	width: 100%;
+	max-width: 300px;
+	aspect-ratio: 3 / 2;
+	margin-bottom: 16px;
+	border-radius: 28px;
+	background: var(--gray);
+	overflow: hidden;
+}
+.dr__art img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+.dr__title {
+	margin: 0;
+	color: var(--ink);
+	font: 600 24px/1.15 var(--display);
+	letter-spacing: -0.5px;
+}
+.dr__sub {
+	margin: 8px 0 0;
+	color: var(--secondary);
+	font: 400 14px/150% var(--text-font);
+	letter-spacing: -0.14px;
+	text-wrap: pretty;
+	max-width: 380px;
+}
+.dr__sub b {
+	color: var(--ink);
+	font-weight: 600;
+}
+.dr__grid {
+	width: 100%;
+	margin-top: 22px;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, 1fr);
+}
+.dr__cell {
+	background: var(--gray);
+	border-radius: 16px;
+	padding: 12px 8px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	min-height: 74px;
+	transition:
+		transform 0.3s var(--spring),
+		background-color 0.25s var(--quad);
+}
+.dr__cell--big {
+	grid-column: span 2;
+	background: var(--violet);
+}
+.dr__cell--done {
+	opacity: 0.4;
+}
+.dr__cell--done .dr__day {
+	color: var(--ink);
+}
+.dr__cell--today {
+	background: var(--yellow);
+	transform: scale(1.03);
+}
+.dr__cell--big.dr__cell--today {
+	background: var(--violet);
+}
+.dr__day {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	color: var(--muted);
+	font: 600 10px/1 var(--display);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+.dr__value {
+	display: flex;
+	/* Награда обязана держаться в одну строку: при переносе ячейки разной высоты
+	   и подписи дней разъезжаются по вертикали. Иконка масштабируется от шрифта. */
+	flex-wrap: nowrap;
+	justify-content: center;
+	gap: 0 7px;
+	color: var(--ink);
+	font: 600 13px/1 var(--display);
+}
+.dr__cell--big .dr__value {
+	font-size: 15px;
+	gap: 0 10px;
+}
+.dr__cell--big .dr__day {
+	color: #19171c8c;
+}
+.dr__actions {
+	width: 100%;
+	margin-top: 22px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+}
+.dr__actions .lp-btn {
+	width: 100%;
+	max-width: 320px;
+}
+.dr__hint {
+	margin: 0;
+	color: var(--muted);
+	font: 400 13px/150% var(--text-font);
+}
+.dr__error {
+	margin: 12px 0 0;
+}
+@media screen and (min-width: 768px) {
+	.dr {
+		align-items: center;
+		padding: 20px;
+	}
+	.dr__card {
+		border-radius: 40px;
+		padding: 40px 36px 32px;
+	}
+	.dr__grid {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+@media screen and (max-width: 420px) {
+	.dr__grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+	.dr__cell--big {
+		grid-column: span 3;
+	}
+	.dr__cell {
+		padding: 10px 5px;
+	}
+	.dr__value {
+		font-size: 12px;
+		gap: 0 5px;
+	}
+}
+
+.lesson-lead {
+	margin: -8px 0 20px;
+	padding: 0 20px;
+	max-width: 640px;
+	color: var(--secondary);
+	font: 400 16px/150% var(--text-font);
+	letter-spacing: -0.32px;
+	text-wrap: pretty;
+}
+.ls-card__lead {
+	margin-bottom: 8px;
+}
+.ls-card--open .ls-card__lead {
+	color: var(--ink);
+	opacity: 0.8;
 }

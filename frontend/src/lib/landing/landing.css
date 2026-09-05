@@ -1062,7 +1062,7 @@
 .lp-card__header {
 	flex-grow: 1;
 	justify-content: center;
-	align-items: center;
+	align-items: flex-end;
 	padding: 0 50px 50px;
 	display: flex;
 }
@@ -1227,6 +1227,7 @@
 	display: flex;
 	background: var(--gray);
 	align-self: stretch;
+	overflow: hidden;
 }
 @media screen and (min-width: 1025px) {
 	.lp-fcard {
@@ -1250,10 +1251,14 @@
 }
 .lp-fcard__header {
 	flex: 1;
-	justify-content: center;
-	align-items: flex-start;
+	flex-direction: column;
+	justify-content: flex-start;
+	align-items: center;
+	gap: 16px;
 	padding: 50px 30px 0;
 	display: flex;
+	position: relative;
+	min-height: 0;
 }
 @media screen and (min-width: 1025px) {
 	.lp-fcard__header {
@@ -1265,12 +1270,81 @@
 	.lp-fcard__header {
 		height: 415px;
 		padding: 70px 50px 0;
+		gap: 20px;
 	}
 }
 @media screen and (min-width: 1729px) {
 	.lp-fcard__header {
 		height: 450px;
 		padding: 80px 60px 0;
+	}
+}
+/* сцена под лейблом: картинка живёт только здесь и не заезжает на заголовок */
+.lp-fcard__stage {
+	position: relative;
+	flex: 1;
+	width: 100%;
+	min-height: 0;
+	pointer-events: none;
+}
+.lp-fcard__art {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	height: 100%;
+	width: auto;
+	filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.1));
+}
+.lp-fcard__art--center {
+	right: auto;
+	left: 50%;
+	bottom: -8%;
+	height: 112%;
+	transform: translateX(-50%);
+}
+.lp-fcard__pile {
+	position: absolute;
+	inset: 0;
+}
+.lp-fcard__pile img {
+	position: absolute;
+	width: auto;
+	filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.12));
+}
+/* веер: левые концы купонов в одной точке, задние выглядывают из-за переднего */
+.lp-fcard__pile--fan img {
+	left: 46%;
+	bottom: -30%;
+	height: 76%;
+	transform-origin: 92% 50%;
+}
+.lp-fcard__pile--fan img:nth-child(1) {
+	transform: translateX(-50%);
+	z-index: 3;
+}
+.lp-fcard__pile--fan img:nth-child(2) {
+	transform: translateX(-50%) rotate(32deg);
+	z-index: 2;
+}
+.lp-fcard__pile--fan img:nth-child(3) {
+	transform: translateX(-50%) rotate(64deg);
+	z-index: 1;
+}
+@media screen and (min-width: 1025px) {
+	.lp-fcard__stage {
+		position: static;
+	}
+	.lp-fcard__art {
+		height: 84%;
+	}
+	/* широкие предметы: верх картинки всегда ниже лейбла */
+	.lp-fcard__art--center {
+		height: 62%;
+		bottom: 0;
+	}
+	.lp-fcard__pile--fan img {
+		height: 52%;
+		bottom: -16%;
 	}
 }
 .lp-fcard__content {
@@ -1411,6 +1485,20 @@
 	.lp-footer__top {
 		gap: 30px;
 	}
+}
+.lp-emoji {
+	display: inline-block;
+	width: 1.9em;
+	height: 1.9em;
+	margin-left: 6px;
+	vertical-align: -0.55em;
+}
+.lp-footer__emoji {
+	display: inline-block;
+	width: 1.9em;
+	height: 1.9em;
+	margin-left: 6px;
+	vertical-align: -0.55em;
 }
 .lp-footer__title {
 	letter-spacing: -2.4px;
@@ -1625,4 +1713,50 @@
 }
 .lp-auth .lp-btn {
 	width: 100%;
+}
+
+/* Документы: правила, политика */
+.lp-doc {
+	padding: 190px 0 140px;
+	min-height: 100vh;
+}
+.lp-doc__body {
+	max-width: 720px;
+	margin: 40px auto 0;
+	color: var(--ink);
+	font: 400 17px/160% var(--text-font);
+	letter-spacing: -0.3px;
+}
+.lp-doc__body h2 {
+	margin: 48px 0 12px;
+	font: 700 24px/120% var(--display);
+	letter-spacing: -0.6px;
+}
+.lp-doc__body p,
+.lp-doc__body li {
+	margin: 0 0 12px;
+}
+.lp-doc__body ul {
+	list-style: disc outside;
+	padding-left: 22px;
+	margin: 0 0 16px;
+}
+.lp-doc__body li {
+	display: list-item;
+}
+.lp-doc__body a {
+	color: inherit;
+	text-decoration: underline;
+}
+.lp-doc__meta {
+	color: var(--muted);
+	font-size: 15px;
+}
+@media (max-width: 767px) {
+	.lp-doc {
+		padding: 120px 0 80px;
+	}
+	.lp-doc__body {
+		font-size: 16px;
+	}
 }

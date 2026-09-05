@@ -51,7 +51,7 @@
 		<div class="app-panel__head">
 			<div>
 				<h2 class="app-panel__title">Новая комната</h2>
-				<p class="app-panel__sub">Ещё один стол для сотрудника и заказов</p>
+				<p class="app-panel__sub">Купить ещё один стол для сотрудника и заказов</p>
 			</div>
 			<button class="app-panel__close" aria-label="Закрыть" onclick={onclose}
 				><X size={20} strokeWidth={2.25} /></button
@@ -59,7 +59,7 @@
 		</div>
 		<div class="app-panel__action">
 			<Button color="black" size="medium" disabled={busy} onclick={openHere}>
-				Купить <Price value={hexPrice} />
+				<Price value={hexPrice} />
 			</Button>
 		</div>
 	{:else if room}

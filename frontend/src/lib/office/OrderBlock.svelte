@@ -62,7 +62,7 @@
 		<div class="app-panel__action">
 			{#if ready}
 				<Button color="black" size="medium" disabled={busy} onclick={take}
-					>Забрать <Price value={order.reward.coins} /></Button
+					>Забрать&nbsp;<Price value={order.reward.coins} /></Button
 				>
 			{:else}
 				<Button

@@ -4,38 +4,48 @@
 	import { authClient } from '$lib/auth';
 	import Button from '$lib/landing/Button.svelte';
 
-	let mode = $state<'signin' | 'signup'>('signin');
 	let email = $state('');
 	let password = $state('');
-	let name = $state('');
 	let error = $state('');
 	let busy = $state(false);
 
 	const messages: Record<string, string> = {
-		USER_NOT_FOUND: 'Аккаунт с таким email не найден. Нажмите «Зарегистрироваться».',
-		INVALID_EMAIL_OR_PASSWORD: 'Неверный email или пароль.',
-		USER_ALREADY_EXISTS: 'Такой аккаунт уже есть. Нажмите «У меня уже есть аккаунт» и войдите.',
+		INVALID_EMAIL_OR_PASSWORD: 'Неверный пароль.',
+		INVALID_PASSWORD: 'Неверный пароль.',
 		PASSWORD_TOO_SHORT: 'Пароль короче 8 символов.',
 		INVALID_EMAIL: 'Проверьте email.',
 		TOO_MANY_REQUESTS: 'Слишком много попыток, подождите минуту.'
 	};
+
+	function describe(result: { code?: string; status?: number; message?: string }) {
+		return (
+			messages[result.code ?? ''] ??
+			(result.status === 429 ? messages.TOO_MANY_REQUESTS : (result.message ?? 'Не удалось войти'))
+		);
+	}
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
 		error = '';
 		busy = true;
 		try {
-			const result =
-				mode === 'signup'
-					? await authClient.signUp.email({ email, password, name: name || email.split('@')[0] })
-					: await authClient.signIn.email({ email, password });
-			if (result.error) {
-				const code = result.error.code ?? '';
+			const signIn = await authClient.signIn.email({ email, password });
+			if (!signIn.error) {
+				await authClient.getSession();
+				await goto(resolve('/app'));
+				return;
+			}
+			const code = signIn.error.code ?? '';
+			if (code !== 'USER_NOT_FOUND' && code !== 'INVALID_EMAIL_OR_PASSWORD') {
+				error = describe(signIn.error);
+				return;
+			}
+			const signUp = await authClient.signUp.email({ email, password, name: email.split('@')[0] });
+			if (signUp.error) {
 				error =
-					messages[code] ??
-					(result.error.status === 429
-						? messages.TOO_MANY_REQUESTS
-						: (result.error.message ?? 'Не удалось войти'));
+					signUp.error.code === 'USER_ALREADY_EXISTS'
+						? messages.INVALID_PASSWORD
+						: describe(signUp.error);
 				return;
 			}
 			await authClient.getSession();
@@ -49,15 +59,6 @@
 </script>
 
 <form onsubmit={submit} class="lp-auth__form">
-	{#if mode === 'signup'}
-		<input
-			class="lp-auth__input"
-			type="text"
-			placeholder="Имя"
-			bind:value={name}
-			autocomplete="name"
-		/>
-	{/if}
 	<input
 		class="lp-auth__input"
 		type="email"
@@ -73,19 +74,10 @@
 		bind:value={password}
 		required
 		minlength="8"
-		autocomplete={mode === 'signup' ? 'new-password' : 'current-password'}
+		autocomplete="current-password"
 	/>
 	{#if error}
 		<p class="lp-auth__error">{error}</p>
 	{/if}
-	<Button type="submit" color="black" size="medium" disabled={busy}>
-		{mode === 'signup' ? 'Создать аккаунт' : 'Войти'}
-	</Button>
-	<button
-		class="lp-auth__switch"
-		type="button"
-		onclick={() => (mode = mode === 'signup' ? 'signin' : 'signup')}
-	>
-		{mode === 'signup' ? 'У меня уже есть аккаунт' : 'Зарегистрироваться'}
-	</button>
+	<Button type="submit" color="black" size="medium" disabled={busy}>Продолжить</Button>
 </form>

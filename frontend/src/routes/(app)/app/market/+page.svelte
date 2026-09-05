@@ -1,5 +1,6 @@
 <script lang="ts">
 	import BoostsTab from '$lib/market/BoostsTab.svelte';
+	import BoxTab from '$lib/market/BoxTab.svelte';
 	import CouponsTab from '$lib/market/CouponsTab.svelte';
 	import MyCoupons from '$lib/market/MyCoupons.svelte';
 	import OfficesTab from '$lib/market/OfficesTab.svelte';
@@ -10,6 +11,7 @@
 		{ value: 'offices', label: 'Офисы' },
 		{ value: 'rooms', label: 'Комнаты' },
 		{ value: 'boosts', label: 'Ускорители' },
+		{ value: 'box', label: 'Бокс' },
 		{ value: 'workers', label: 'Сотрудники' },
 		{ value: 'coupons', label: 'Купоны' }
 	] as const;
@@ -39,6 +41,8 @@
 		<RoomsTab />
 	{:else if tab === 'boosts'}
 		<BoostsTab />
+	{:else if tab === 'box'}
+		<BoxTab />
 	{:else if tab === 'workers'}
 		<WorkersTab />
 	{:else if tab === 'coupons'}

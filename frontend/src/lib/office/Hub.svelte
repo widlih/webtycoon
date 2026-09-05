@@ -17,7 +17,8 @@
 	} from '../../convex/model/hex';
 	import Room from './Room.svelte';
 	import Price from '$lib/landing/Price.svelte';
-	import { useQuery } from 'convex-svelte';
+	import { useMutation, useQuery } from 'convex-svelte';
+	import { flyReward } from '$lib/fx/fly';
 	import { onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { api } from '../../convex/_generated/api';
@@ -79,7 +80,7 @@
 			zoom.set(SELECTED_ZOOM);
 		} else {
 			target.set({ x: 0, z: 0 });
-			zoom.set(34);
+			zoom.set(baseZoom);
 		}
 	});
 
@@ -96,8 +97,27 @@
 	);
 
 	let hovered = $state<string | null>(null);
+	const mountedAt = Date.now();
 
 	const activeOrders = useQuery(api.orders.active, {});
+	const collectOrder = useMutation(api.orders.collect);
+	let collecting = $state<string | null>(null);
+
+	async function collectOnScene(
+		roomId: string,
+		orderId: (typeof activeOrders.data extends (infer T)[] | undefined ? T : never)['_id'],
+		reward: { coins: number; xp: number }
+	) {
+		if (collecting) return;
+		collecting = roomId;
+		try {
+			const from = ordersUi.projectRoom?.(roomId) ?? { x: innerWidth / 2, y: innerHeight / 2 };
+			await collectOrder({ orderId });
+			flyReward(from, reward);
+		} finally {
+			collecting = null;
+		}
+	}
 	let now = $state(Date.now());
 	onMount(() => {
 		const id = setInterval(() => (now = Date.now()), 1000);
@@ -108,13 +128,17 @@
 		return activeOrders.data?.find((o) => o.roomId === roomId) ?? null;
 	}
 
-	function acceptsOffer(room: { _id: string; product: string; worker?: unknown }): boolean {
-		const offer = ordersUi.selectedOffer ?? ordersUi.drag;
-		if (!offer || !room.worker || room.product !== offer.product) return false;
+	function acceptsOffer(room: { _id: string; worker?: unknown; items: unknown[] }): boolean {
+		const target = ordersUi.selectedOffer ?? ordersUi.drag;
+		if (!target) return false;
+		if (target.kind === 'worker') return !room.worker;
+		if (target.kind === 'item') return room.items.length < view.slots.length;
+		if (!room.worker) return false;
 		return !activeOrders.data?.some((o) => o.roomId === room._id);
 	}
 
-	const { camera, renderer, scene } = useThrelte();
+	const { camera, renderer, scene, size } = useThrelte();
+	const baseZoom = $derived(Math.min(34, Math.max(14, ($size.width - 24) / 21)));
 	onMount(() => {
 		const pmrem = new PMREMGenerator(renderer);
 		const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -272,20 +296,29 @@
 		tileRadius={TILE_RADIUS}
 		rim={RIM}
 		selected={room._id === selectedRoomId}
+		fresh={room._creationTime > mountedAt - 3000}
 		workerMode={order ? ((order.endsAt ?? 0) <= now ? 'ready' : 'working') : 'idle'}
 		onselect={() => onSelectRoom(room._id)}
 	/>
 	{#if room.worker}
-		<HTML position={[p.x, 3.1, p.z]} center pointerEvents="none" zIndexRange={[5, 0]}>
+		{@const ready = Boolean(order) && (order?.endsAt ?? 0) <= now}
+		<HTML
+			position={[p.x, 3.8, p.z]}
+			center
+			pointerEvents={ready ? 'auto' : 'none'}
+			zIndexRange={[5, 0]}
+		>
 			{#if order}
 				<RoomBadge
 					title={order.title}
 					remaining={(order.endsAt ?? now) - now}
 					total={(order.endsAt ?? 0) - (order.startedAt ?? 0)}
-					ready={(order.endsAt ?? 0) <= now}
+					{ready}
+					reward={order.reward}
+					onclick={() => collectOnScene(room._id, order._id, order.reward)}
 				/>
 			{:else}
-				<div class="app-tag">свободен</div>
+				<RoomBadge idle />
 			{/if}
 		</HTML>
 	{/if}

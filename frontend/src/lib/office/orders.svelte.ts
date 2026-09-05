@@ -1,9 +1,11 @@
 import type { Id } from '../../convex/_generated/dataModel';
 
-export type SelectedOffer = { id: Id<'offerSlots'>; product: string } | null;
+export type DragKind = 'offer' | 'item' | 'worker';
+export type SelectedOffer = { id: string; kind: DragKind; product?: string } | null;
 export type DragState = {
-	id: Id<'offerSlots'>;
-	product: string;
+	id: string;
+	kind: DragKind;
+	product?: string;
 	title: string;
 	x: number;
 	y: number;
@@ -12,8 +14,12 @@ export type DragState = {
 class OrdersUi {
 	selectedOffer = $state<SelectedOffer>(null);
 	quizOrderId = $state<Id<'orders'> | null>(null);
+	helpOrderId = $state<Id<'orders'> | null>(null);
+	buildOrderId = $state<Id<'orders'> | null>(null);
+	buildKind = $state<'build' | 'flow' | 'memory'>('build');
 	drag = $state<DragState>(null);
 	hoverRoomId = $state<string | null>(null);
+	inventoryOpen = $state(false);
 	hitTest: ((clientX: number, clientY: number) => string | null) | null = null;
 	projectRoom: ((roomId: string) => { x: number; y: number } | null) | null = null;
 }

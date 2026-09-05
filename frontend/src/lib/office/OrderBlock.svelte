@@ -6,11 +6,15 @@
 	import { api } from '../../convex/_generated/api';
 	import type { RoomView } from '../../convex/office';
 	import { formatRemaining, ordersUi } from './orders.svelte';
+	import { flyReward } from '$lib/fx/fly';
 
 	let { room }: { room: RoomView } = $props();
 
 	const orders = useQuery(api.orders.active, {});
 	const collect = useMutation(api.orders.collect);
+	const me = useQuery(api.players.me, {});
+	const noEnergy = $derived((me.data?.energy ?? 1) < 1);
+	const energyIn = $derived(Math.max(1, Math.ceil((me.data?.energyNextInMs ?? 0) / 60000)));
 
 	let now = $state(Date.now());
 	let error = $state('');
@@ -30,7 +34,10 @@
 		error = '';
 		busy = true;
 		try {
+			const reward = order.reward;
+			const from = ordersUi.projectRoom?.(room._id) ?? { x: innerWidth / 2, y: innerHeight / 2 };
 			await collect({ orderId: order._id });
+			flyReward(from, reward);
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
 		} finally {
@@ -58,9 +65,24 @@
 					>Забрать <Price value={order.reward.coins} /></Button
 				>
 			{:else}
-				<Button color="black" size="medium" onclick={() => (ordersUi.quizOrderId = order!._id)}
-					>Помочь</Button
+				<Button
+					color="black"
+					size="medium"
+					disabled={noEnergy}
+					onclick={() =>
+						['ucoz', 'rusender', 'webask'].includes(order.product)
+							? ((ordersUi.buildKind =
+									order.product === 'rusender'
+										? 'flow'
+										: order.product === 'webask'
+											? 'memory'
+											: 'build'),
+								(ordersUi.helpOrderId = order!._id))
+							: (ordersUi.quizOrderId = order!._id)}>Помочь</Button
 				>
+				{#if noEnergy}
+					<p class="app-muted">Нет энергии · +1 через {energyIn} мин</p>
+				{/if}
 			{/if}
 		</div>
 	{/if}

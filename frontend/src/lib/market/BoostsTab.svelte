@@ -56,11 +56,13 @@
 		{@const affordable = coins >= b.price}
 		<MarketCard
 			title={b.title}
+			image={`/img/boosts/${b.slug}.webp`}
 			big={b.title}
 			text={b.description}
 			price={state ? undefined : b.price}
 			disabled={busy === b.slug || !affordable}
 			hint={state ?? undefined}
+			class="mk-card--figure"
 			onbuy={() => purchase(b.slug)}
 		/>
 	{/each}

@@ -10,6 +10,7 @@ import {
 	OFFER_SLOT_PRICES,
 	OFFER_SLOTS_MAX,
 	OFFER_SLOTS_START,
+	PRODUCTS,
 	QUIZ_BONUS_MULTIPLIER,
 	SKILL_REWARD_BONUS,
 	SKILL_SPEED_BONUS
@@ -61,19 +62,28 @@ export async function activeOrderOfRoom(
 }
 
 async function templatePool(ctx: MutationCtx, playerId: Id<'players'>) {
-	const skills = await ctx.db
-		.query('skills')
-		.withIndex('by_player_product', (q) => q.eq('playerId', playerId))
-		.collect();
 	const pool: Doc<'orderTemplates'>[] = [];
-	for (const skill of skills) {
+	for (const product of PRODUCTS) {
+		const level = Math.max(1, await skillLevel(ctx, playerId, product));
 		const templates = await ctx.db
 			.query('orderTemplates')
-			.withIndex('by_product', (q) => q.eq('product', skill.product))
+			.withIndex('by_product', (q) => q.eq('product', product))
 			.collect();
-		pool.push(...templates.filter((t) => t.active && t.minSkill <= Math.max(1, skill.level)));
+		pool.push(...templates.filter((t) => t.active && t.minSkill <= level));
 	}
 	return pool;
+}
+
+async function pickTemplate(ctx: MutationCtx, slot: Doc<'offerSlots'>, exclude: string[]) {
+	const pool = await templatePool(ctx, slot.playerId);
+	const others = (await slotsOf(ctx, slot.playerId))
+		.filter((s) => s._id !== slot._id && s.templateSlug)
+		.map((s) => s.templateSlug!);
+	const taken = new Set([...others, ...exclude]);
+	const fresh = pool.filter((t) => !taken.has(t.slug));
+	const candidates = fresh.length > 0 ? fresh : pool.filter((t) => !exclude.includes(t.slug));
+	if (candidates.length === 0) return null;
+	return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
 export function unlockedSlots(player: Doc<'players'>): number {
@@ -90,13 +100,27 @@ export async function slotsOf(ctx: QueryCtx | MutationCtx, playerId: Id<'players
 }
 
 export async function fillSlot(ctx: MutationCtx, slot: Doc<'offerSlots'>) {
-	const pool = await templatePool(ctx, slot.playerId);
-	if (pool.length === 0) return;
-	const template = pool[Math.floor(Math.random() * pool.length)];
+	const template = await pickTemplate(ctx, slot, []);
+	if (!template) return;
 	await ctx.db.patch(slot._id, {
 		templateSlug: template.slug,
 		product: template.product,
-		readyAt: undefined
+		readyAt: undefined,
+		swapped: undefined
+	});
+}
+
+export async function swapSlot(ctx: MutationCtx, player: Doc<'players'>, slotId: Id<'offerSlots'>) {
+	const slot = await ctx.db.get(slotId);
+	if (!slot || slot.playerId !== player._id || !slot.templateSlug)
+		throw new Error('OFFER_NOT_FOUND');
+	if (slot.swapped) throw new Error('SWAP_USED');
+	const template = await pickTemplate(ctx, slot, [slot.templateSlug]);
+	if (!template) throw new Error('NO_ALTERNATIVE');
+	await ctx.db.patch(slot._id, {
+		templateSlug: template.slug,
+		product: template.product,
+		swapped: true
 	});
 }
 
@@ -141,14 +165,13 @@ export async function assignSlot(
 		throw new Error('OFFER_NOT_FOUND');
 	const room = await requireOwnRoom(ctx, player, roomId);
 	if (!room.worker) throw new Error('NO_WORKER');
-	if (room.product !== slot.product) throw new Error('WRONG_DEPARTMENT');
 	if (await activeOrderOfRoom(ctx, roomId)) throw new Error('ORDER_IN_PROGRESS');
 	const template = await ctx.db
 		.query('orderTemplates')
 		.withIndex('by_slug', (q) => q.eq('slug', slot.templateSlug!))
 		.unique();
 	if (!template) throw new Error('TEMPLATE_NOT_FOUND');
-	const skill = await skillLevel(ctx, player._id, room.product);
+	const skill = await skillLevel(ctx, player._id, slot.product);
 	const effects = await roomEffects(ctx, roomId);
 	const scale = await timeScale(ctx);
 	const workerSpeed = room.worker.speed ?? 0;
@@ -162,7 +185,7 @@ export async function assignSlot(
 	const orderId = await ctx.db.insert('orders', {
 		playerId: player._id,
 		roomId,
-		product: room.product,
+		product: slot.product,
 		templateSlug: template.slug,
 		status: 'active',
 		startedAt: now,
@@ -173,7 +196,12 @@ export async function assignSlot(
 		}
 	});
 	const readyAt = now + Math.round(OFFER_COOLDOWN_MS / scale);
-	await ctx.db.patch(slot._id, { templateSlug: undefined, product: undefined, readyAt });
+	await ctx.db.patch(slot._id, {
+		templateSlug: undefined,
+		product: undefined,
+		readyAt,
+		swapped: undefined
+	});
 	await ctx.scheduler.runAt(readyAt, internal.orders.spawn, { slotId: slot._id });
 	return orderId;
 }

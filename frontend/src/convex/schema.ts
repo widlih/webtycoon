@@ -18,12 +18,20 @@ export default defineSchema({
 		level: v.number(),
 		coins: v.number(),
 		premium: v.optional(v.number()),
+		boxes: v.optional(v.number()),
 		energy: v.optional(v.number()),
 		energyUpdatedAt: v.optional(v.number()),
 		offerSlotsUnlocked: v.optional(v.number()),
 		activeOfficeId: v.optional(v.id('offices')),
+		referralCode: v.optional(v.string()),
+		referredBy: v.optional(v.id('players')),
+		referralRewarded: v.optional(v.boolean()),
+		telegramUserId: v.optional(v.string()),
 		createdAt: v.number()
-	}).index('by_auth', ['authId']),
+	})
+		.index('by_auth', ['authId'])
+		.index('by_referral_code', ['referralCode'])
+		.index('by_telegram', ['telegramUserId']),
 
 	skills: defineTable({
 		playerId: v.id('players'),
@@ -40,7 +48,6 @@ export default defineSchema({
 	rooms: defineTable({
 		officeId: v.id('offices'),
 		playerId: v.id('players'),
-		product: v.string(),
 		q: v.number(),
 		r: v.number(),
 		worker: v.optional(
@@ -49,7 +56,8 @@ export default defineSchema({
 				skin: v.string(),
 				isPlayer: v.boolean(),
 				slug: v.optional(v.string()),
-				speed: v.optional(v.number())
+				speed: v.optional(v.number()),
+				salary: v.optional(v.number())
 			})
 		),
 		createdAt: v.number()
@@ -64,6 +72,22 @@ export default defineSchema({
 	})
 		.index('by_room', ['roomId'])
 		.index('by_room_slot', ['roomId', 'slotId']),
+
+	inventory: defineTable({
+		playerId: v.id('players'),
+		kind: v.union(v.literal('item'), v.literal('worker')),
+		slug: v.string(),
+		createdAt: v.number()
+	}).index('by_player', ['playerId']),
+
+	payrolls: defineTable({
+		playerId: v.id('players'),
+		periodKey: v.string(),
+		paid: v.number(),
+		total: v.number(),
+		left: v.array(v.string()),
+		createdAt: v.number()
+	}).index('by_player', ['playerId']),
 
 	orderTemplates: defineTable({
 		slug: v.string(),
@@ -82,7 +106,8 @@ export default defineSchema({
 		index: v.number(),
 		templateSlug: v.optional(v.string()),
 		product: v.optional(v.string()),
-		readyAt: v.optional(v.number())
+		readyAt: v.optional(v.number()),
+		swapped: v.optional(v.boolean())
 	}).index('by_player', ['playerId']),
 
 	orders: defineTable({
@@ -172,6 +197,7 @@ export default defineSchema({
 		questSlug: v.string(),
 		periodKey: v.string(),
 		progress: v.number(),
+		startedAt: v.optional(v.number()),
 		completedAt: v.optional(v.number()),
 		claimedAt: v.optional(v.number())
 	})
@@ -192,6 +218,7 @@ export default defineSchema({
 		skin: v.string(),
 		speed: v.number(),
 		price: v.number(),
+		salary: v.optional(v.number()),
 		order: v.number(),
 		active: v.boolean()
 	}).index('by_slug', ['slug']),
@@ -241,6 +268,15 @@ export default defineSchema({
 		.index('by_player', ['playerId'])
 		.index('by_code', ['code']),
 
+	boxOpens: defineTable({
+		playerId: v.id('players'),
+		periodKey: v.string(),
+		dropId: v.string(),
+		prize: v.any(),
+		source: v.optional(v.union(v.literal('buy'), v.literal('reward'))),
+		createdAt: v.number()
+	}).index('by_player_period', ['playerId', 'periodKey']),
+
 	scores: defineTable({
 		board: v.string(),
 		periodKey: v.string(),
@@ -270,6 +306,19 @@ export default defineSchema({
 		.index('by_player', ['playerId'])
 		.index('by_order', ['orderId']),
 
+	buildRuns: defineTable({
+		playerId: v.id('players'),
+		orderId: v.id('orders'),
+		product: v.string(),
+		kind: v.optional(v.string()),
+		target: v.number(),
+		lines: v.optional(v.number()),
+		status: v.union(v.literal('open'), v.literal('passed'), v.literal('failed')),
+		createdAt: v.number()
+	})
+		.index('by_player', ['playerId'])
+		.index('by_order', ['orderId']),
+
 	achievements: defineTable({
 		slug: v.string(),
 		title: v.string(),
@@ -286,6 +335,13 @@ export default defineSchema({
 		progress: v.number(),
 		unlockedAt: v.optional(v.number())
 	}).index('by_player_slug', ['playerId', 'slug']),
+
+	leads: defineTable({
+		playerId: v.id('players'),
+		kind: v.string(),
+		email: v.string(),
+		createdAt: v.number()
+	}).index('by_player_kind', ['playerId', 'kind']),
 
 	config: defineTable({
 		key: v.string(),

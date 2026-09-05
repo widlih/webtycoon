@@ -3,6 +3,8 @@
 	import { useMutation } from 'convex-svelte';
 	import Button from '$lib/landing/Button.svelte';
 	import Price from '$lib/landing/Price.svelte';
+	import Burst from '$lib/fx/Burst.svelte';
+	import { centerOf, flyReward } from '$lib/fx/fly';
 	import { api } from '../../../convex/_generated/api';
 	import type { Doc } from '../../../convex/_generated/dataModel';
 	import {
@@ -11,7 +13,11 @@
 		QUIZ_PASS_THRESHOLD
 	} from '../../../convex/model/constants';
 
-	let { orderId, onclose }: { orderId: Doc<'orders'>['_id']; onclose: () => void } = $props();
+	let {
+		orderId,
+		portrait,
+		onclose
+	}: { orderId: Doc<'orders'>['_id']; portrait?: string; onclose: () => void } = $props();
 
 	const start = useMutation(api.quizzes.start);
 	const answer = useMutation(api.quizzes.answer);
@@ -30,6 +36,7 @@
 	let error = $state('');
 	let busy = $state(false);
 	let started = false;
+	let resultBox = $state<HTMLDivElement | null>(null);
 
 	$effect(() => {
 		if (!started) {
@@ -58,6 +65,10 @@
 		busy = true;
 		try {
 			result = await answer({ runId, answers: picked });
+			if (result.reward) {
+				const reward = result.reward;
+				setTimeout(() => flyReward(centerOf(resultBox), reward), 350);
+			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
 		} finally {
@@ -71,6 +82,7 @@
 <div class="app-modal" role="dialog" aria-modal="true">
 	<div class="app-modal__box">
 		<div class="app-panel__head">
+			{#if portrait}<img class="quiz__face" src={portrait} alt="" />{/if}
 			<div>
 				<h2 class="app-panel__title">Помочь сотруднику</h2>
 				{#if !result}
@@ -90,8 +102,9 @@
 			<p class="app-hint">Подбираем вопросы…</p>
 		{:else}
 			{#if result}
-				<div class="quiz__result" class:is-passed={result.passed}>
+				<div class="quiz__result" class:is-passed={result.passed} bind:this={resultBox}>
 					{#if result.passed}
+						<Burst />
 						<p class="quiz__verdict">
 							Заказ закрыт · {result.correct} из {questions.length} · бонус ×{bonus}
 						</p>
@@ -157,3 +170,13 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	.quiz__face {
+		flex: none;
+		width: 96px;
+		height: 96px;
+		object-fit: contain;
+		object-position: center bottom;
+	}
+</style>

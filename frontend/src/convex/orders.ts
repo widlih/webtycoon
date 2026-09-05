@@ -7,6 +7,7 @@ import {
 	ensureSlots,
 	fillSlot,
 	slotsOf,
+	swapSlot,
 	unlockedSlots,
 	unlockSlot
 } from './model/orders';
@@ -31,6 +32,7 @@ export const slots = query({
 				_id: slot._id,
 				index: slot.index,
 				readyAt: slot.readyAt ?? null,
+				swapped: slot.swapped ?? false,
 				offer: template
 					? {
 							title: template.title,
@@ -71,6 +73,14 @@ export const assign = mutation({
 	handler: async (ctx, { slotId, roomId }) => {
 		const player = await requirePlayer(ctx);
 		return await assignSlot(ctx, player, slotId, roomId);
+	}
+});
+
+export const swap = mutation({
+	args: { slotId: v.id('offerSlots') },
+	handler: async (ctx, { slotId }) => {
+		const player = await requirePlayer(ctx);
+		await swapSlot(ctx, player, slotId);
 	}
 });
 

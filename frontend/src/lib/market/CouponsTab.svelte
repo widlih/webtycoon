@@ -46,11 +46,13 @@
 			{@const affordable = premium >= t.price}
 			<MarketCard
 				title={t.title}
+				image={`/img/coupons/${t.product}.webp`}
 				big={t.discount}
 				text="Скидка {t.discount} · действует {t.ttlDays} дней"
 				price={confirming === t.slug ? undefined : t.price}
 				currency="premium"
 				disabled={busy || !affordable}
+				class="mk-card--figure"
 				onbuy={() => (confirming = t.slug)}
 			>
 				{#if lastCode?.slug === t.slug}

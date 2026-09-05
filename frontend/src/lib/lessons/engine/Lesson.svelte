@@ -2,6 +2,8 @@
 	import { resolve } from '$app/paths';
 	import Button from '$lib/landing/Button.svelte';
 	import Price from '$lib/landing/Price.svelte';
+	import Burst from '$lib/fx/Burst.svelte';
+	import { centerOf, flyReward } from '$lib/fx/fly';
 	import { useMutation } from 'convex-svelte';
 	import { api } from '../../../convex/_generated/api';
 	import type { LessonStep } from '../../../convex/model/lessonSteps';
@@ -22,6 +24,7 @@
 		alreadyCompleted: boolean;
 	} | null>(null);
 	let busy = $state(false);
+	let doneBox = $state<HTMLDivElement | null>(null);
 
 	const step = $derived(lesson.steps[index]);
 	const Widget = $derived(widgets[step.widget]);
@@ -49,6 +52,10 @@
 		busy = true;
 		try {
 			finished = await complete({ slug: lesson.slug });
+			if (finished.reward) {
+				const reward = finished.reward;
+				setTimeout(() => flyReward(centerOf(doneBox), reward), 350);
+			}
 		} finally {
 			busy = false;
 		}
@@ -57,7 +64,8 @@
 
 <section class="lesson">
 	{#if finished}
-		<div class="lesson__done">
+		<div class="lesson__done" bind:this={doneBox}>
+			<Burst />
 			<h2>Урок пройден</h2>
 			{#if finished.reward}
 				<p class="lesson__reward">
@@ -79,7 +87,10 @@
 			</div>
 			<span class="lesson__step">Шаг {index + 1} из {lesson.steps.length}</span>
 		</div>
-		<p class="lesson__prompt"><span class="lesson__num">{index + 1}</span>{step.prompt}</p>
+		<div class="lesson__task">
+			<span class="lesson__task-label">Задание {index + 1}</span>
+			<p class="lesson__task-text">{step.prompt}</p>
+		</div>
 		<div class="lesson__widget" class:is-wrong={wrong}>
 			{#key index}
 				<Widget {step} {onaction} {wrong} />
@@ -126,26 +137,30 @@
 		font: 400 14px/1 var(--text-font);
 		white-space: nowrap;
 	}
-	.lesson__prompt {
-		margin: 0;
-		display: flex;
-		align-items: flex-start;
-		gap: 10px;
+	.lesson__task {
+		display: grid;
+		gap: 8px;
+		padding: 20px 24px;
+		border-radius: 24px;
+		background: var(--yellow);
 		color: var(--ink);
-		font: 600 18px/140% var(--display);
-		letter-spacing: -0.36px;
 	}
-	.lesson__num {
-		flex-shrink: 0;
-		width: 26px;
-		height: 26px;
-		border-radius: 50%;
-		background: var(--ink);
-		color: #fff;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		font: 600 13px/1 var(--display);
+	.lesson__task-label {
+		font: 700 12px/1 var(--display);
+		letter-spacing: 0.6px;
+		text-transform: uppercase;
+		opacity: 0.7;
+	}
+	.lesson__task-text {
+		margin: 0;
+		font: 600 20px/130% var(--display);
+		letter-spacing: -0.4px;
+		text-wrap: pretty;
+	}
+	@media screen and (min-width: 1025px) {
+		.lesson__task-text {
+			font-size: 22px;
+		}
 	}
 	.lesson__widget {
 		border-radius: 32px;

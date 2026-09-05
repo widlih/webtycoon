@@ -1,16 +1,9 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import { issueCoupon, uniqueCouponCode } from './model/coupons';
 import { emit } from './model/events';
 import { spend } from './model/ledger';
 import { requirePlayer } from './model/players';
-
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-function generateCode(): string {
-	let code = '';
-	for (let i = 0; i < 8; i++) code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
-	return `${code.slice(0, 4)}-${code.slice(4)}`;
-}
 
 export const templates = query({
 	args: {},
@@ -55,15 +48,7 @@ export const buy = mutation({
 			.withIndex('by_slug', (q) => q.eq('slug', templateSlug))
 			.unique();
 		if (!template) throw new Error('COUPON_NOT_FOUND');
-		let code = generateCode();
-		while (
-			await ctx.db
-				.query('coupons')
-				.withIndex('by_code', (q) => q.eq('code', code))
-				.unique()
-		) {
-			code = generateCode();
-		}
+		const code = await uniqueCouponCode(ctx);
 		await spend(ctx, {
 			playerId: player._id,
 			currency: 'coins',
@@ -71,15 +56,7 @@ export const buy = mutation({
 			reason: 'coupon.buy',
 			key: `coupon:${code}`
 		});
-		const now = Date.now();
-		const id = await ctx.db.insert('coupons', {
-			playerId: player._id,
-			templateSlug,
-			code,
-			status: 'active',
-			issuedAt: now,
-			expiresAt: now + template.ttlDays * 24 * 60 * 60 * 1000
-		});
+		const id = await issueCoupon(ctx, player._id, template, code);
 		await emit(ctx, player._id, { type: 'coupon.bought', templateSlug, product: template.product });
 		return { id, code };
 	}

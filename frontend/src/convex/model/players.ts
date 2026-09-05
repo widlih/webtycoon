@@ -3,6 +3,7 @@ import type { MutationCtx, QueryCtx } from '../_generated/server';
 import { authComponent } from '../auth';
 import { emit } from './events';
 import { bootstrapOffice } from './office';
+import { newReferralCode, playerByReferralCode } from './referrals';
 
 export async function getPlayer(ctx: QueryCtx | MutationCtx): Promise<Doc<'players'> | null> {
 	const user = await authComponent.safeGetAuthUser(ctx);
@@ -19,13 +20,16 @@ export async function requirePlayer(ctx: QueryCtx | MutationCtx): Promise<Doc<'p
 	return player;
 }
 
-export async function ensurePlayer(ctx: MutationCtx): Promise<Doc<'players'>> {
+export async function ensurePlayer(ctx: MutationCtx, ref?: string): Promise<Doc<'players'>> {
 	const user = await authComponent.getAuthUser(ctx);
 	const existing = await ctx.db
 		.query('players')
 		.withIndex('by_auth', (q) => q.eq('authId', user._id))
 		.unique();
 	if (existing) return existing;
+	let referralCode = newReferralCode();
+	while (await playerByReferralCode(ctx, referralCode)) referralCode = newReferralCode();
+	const referrer = ref ? await playerByReferralCode(ctx, ref) : null;
 	const id = await ctx.db.insert('players', {
 		authId: user._id,
 		nick: user.name || user.email.split('@')[0],
@@ -35,6 +39,8 @@ export async function ensurePlayer(ctx: MutationCtx): Promise<Doc<'players'>> {
 		premium: 0,
 		energy: 8,
 		energyUpdatedAt: Date.now(),
+		referralCode,
+		referredBy: referrer?._id,
 		createdAt: Date.now()
 	});
 	const player = (await ctx.db.get(id))!;

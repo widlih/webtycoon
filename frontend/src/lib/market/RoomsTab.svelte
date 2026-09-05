@@ -1,29 +1,32 @@
 <script lang="ts">
 	import MarketCard from '$lib/market/MarketCard.svelte';
-	import RoomPicker from '$lib/components/RoomPicker.svelte';
 	import { useMutation, useQuery } from 'convex-svelte';
 	import { api } from '../../convex/_generated/api';
 	import type { Doc } from '../../convex/_generated/dataModel';
-	import type { RoomView } from '../../convex/office';
 
 	const me = useQuery(api.players.me, {});
 	const office = useQuery(api.office.state, {});
 	const buy = useMutation(api.office.buy);
 
-	let picking = $state<Doc<'items'> | null>(null);
 	let error = $state('');
 	let busy = $state(false);
 
+	const pictures = new Set([
+		'monitor-2',
+		'coffee-machine',
+		'ficus',
+		'monstera',
+		'poster-launch',
+		'poster-metrics',
+		'chair-ergo',
+		'lamp-arc',
+		'rug-round',
+		'bone'
+	]);
+	const picture = (slug: string) => (pictures.has(slug) ? `/img/items/${slug}.webp` : undefined);
+
 	const coins = $derived(me.data?.coins ?? 0);
 	const level = $derived(me.data?.level ?? 1);
-
-	function freeSlot(room: RoomView) {
-		return office.data?.slots.find((s) => !room.items.some((i) => i.slotId === s.id));
-	}
-
-	const roomsWithSpace = $derived(
-		office.data?.rooms.filter((room) => Boolean(freeSlot(room))) ?? []
-	);
 
 	function describe(item: Doc<'items'>) {
 		const effect = item.effect as { speed?: number; reward?: number };
@@ -35,19 +38,23 @@
 
 	const sorted = $derived(
 		[...(office.data?.catalog ?? [])].sort((a, b) => {
-			const rank = (i: Doc<'items'>) => (level < i.unlockLevel ? 2 : coins < i.price ? 1 : 0);
-			return rank(a) - rank(b) || a.unlockLevel - b.unlockLevel || a.price - b.price;
+			const kind = (i: Doc<'items'>) => {
+				const e = i.effect as { speed?: number; reward?: number };
+				return e.speed ? 0 : e.reward ? 1 : 2;
+			};
+			const value = (i: Doc<'items'>) => {
+				const e = i.effect as { speed?: number; reward?: number };
+				return e.speed ?? e.reward ?? 0;
+			};
+			return kind(a) - kind(b) || value(a) - value(b) || a.price - b.price;
 		})
 	);
 
-	async function install(item: Doc<'items'>, room: RoomView) {
-		const slot = freeSlot(room);
-		picking = null;
-		if (!slot) return;
+	async function buyOne(item: Doc<'items'>) {
 		error = '';
 		busy = true;
 		try {
-			await buy({ roomId: room._id, slotId: slot.id, itemSlug: item.slug });
+			await buy({ itemSlug: item.slug });
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
 		} finally {
@@ -56,36 +63,23 @@
 	}
 </script>
 
-{#if office.data && roomsWithSpace.length === 0}
-	<p class="app-muted mk-note" style="margin-top:0;margin-bottom:20px">
-		Свободных слотов нет: откройте комнату или следующий офис.
-	</p>
-{/if}
 <div class="mk-grid">
 	{#each sorted as item (item.slug)}
 		{@const affordable = coins >= item.price}
 		{@const unlocked = level >= item.unlockLevel}
 		<MarketCard
 			title={item.name}
+			image={picture(item.slug)}
 			big={item.name}
 			text={describe(item)}
 			price={item.price}
-			disabled={busy || !affordable || !unlocked || roomsWithSpace.length === 0}
+			disabled={busy || !affordable || !unlocked}
 			corner={unlocked ? undefined : `С ${item.unlockLevel} уровня`}
-			class={unlocked ? '' : 'mk-card--locked'}
-			onbuy={() => (picking = item)}
+			class="{unlocked ? '' : 'mk-card--locked'} {picture(item.slug) ? 'mk-card--figure' : ''}"
+			onbuy={() => buyOne(item)}
 		/>
 	{/each}
 </div>
 {#if error}
 	<p class="app-error mk-note">{error}</p>
-{/if}
-
-{#if picking}
-	<RoomPicker
-		title="{picking.name}: в какую комнату?"
-		rooms={roomsWithSpace}
-		onpick={(room) => install(picking!, room)}
-		onclose={() => (picking = null)}
-	/>
 {/if}

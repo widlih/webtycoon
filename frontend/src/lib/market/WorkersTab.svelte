@@ -1,21 +1,18 @@
 <script lang="ts">
 	import MarketCard from '$lib/market/MarketCard.svelte';
-	import RoomPicker from '$lib/components/RoomPicker.svelte';
+	import { portrait } from '$lib/market/people';
 	import { useMutation, useQuery } from 'convex-svelte';
 	import { api } from '../../convex/_generated/api';
 	import type { Doc } from '../../convex/_generated/dataModel';
-	import type { RoomView } from '../../convex/office';
 
 	const me = useQuery(api.players.me, {});
 	const office = useQuery(api.office.state, {});
 	const hire = useMutation(api.office.hire);
 
-	let picking = $state<Doc<'workers'> | null>(null);
 	let error = $state('');
 	let busy = $state(false);
 
 	const coins = $derived(me.data?.coins ?? 0);
-	const emptyRooms = $derived(office.data?.rooms.filter((r) => !r.worker) ?? []);
 
 	const sorted = $derived(
 		[...(office.data?.workers ?? [])].sort(
@@ -23,12 +20,11 @@
 		)
 	);
 
-	async function place(worker: Doc<'workers'>, room: RoomView) {
-		picking = null;
+	async function hireOne(worker: Doc<'workers'>) {
 		error = '';
 		busy = true;
 		try {
-			await hire({ roomId: room._id, workerSlug: worker.slug });
+			await hire({ workerSlug: worker.slug });
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
 		} finally {
@@ -37,21 +33,21 @@
 	}
 </script>
 
-{#if emptyRooms.length === 0}
-	<p class="app-muted mk-note" style="margin-top:0;margin-bottom:20px">
-		Свободных комнат нет: сначала откройте комнату в офисе.
-	</p>
-{/if}
+<p class="app-muted mk-note" style="margin-top:0;margin-bottom:20px">
+	Нанятый сотрудник появится в инвентаре на сцене офиса, перетащите его на свободный стол.
+</p>
 <div class="mk-grid">
 	{#each sorted as w (w.slug)}
 		{@const affordable = coins >= w.price}
 		<MarketCard
 			title={w.name}
+			image={portrait(w.slug)}
 			big={w.name.charAt(0)}
-			text={w.speed > 0 ? `Заказы на ${Math.round(w.speed * 100)}% быстрее` : 'Без бонуса'}
+			class={portrait(w.slug) ? 'mk-card--figure' : ''}
+			text={`${w.speed > 0 ? `Заказы на ${Math.round(w.speed * 100)}% быстрее` : 'Без бонуса'} · зарплата ${w.salary ?? 0} в день`}
 			price={w.price}
-			disabled={busy || !affordable || emptyRooms.length === 0}
-			onbuy={() => (picking = w)}
+			disabled={busy || !affordable}
+			onbuy={() => hireOne(w)}
 		/>
 	{/each}
 </div>
@@ -60,13 +56,4 @@
 {/if}
 {#if error}
 	<p class="app-error mk-note">{error}</p>
-{/if}
-
-{#if picking}
-	<RoomPicker
-		title="{picking.name}: в какую комнату?"
-		rooms={emptyRooms}
-		onpick={(room) => place(picking!, room)}
-		onclose={() => (picking = null)}
-	/>
 {/if}

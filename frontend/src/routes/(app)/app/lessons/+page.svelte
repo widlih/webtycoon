@@ -14,6 +14,18 @@
 	const done = $derived(lessons.data?.filter((l) => l.completed).length ?? 0);
 	const total = $derived(lessons.data?.length ?? 0);
 	const firstOpen = $derived(lessons.data?.findIndex((l) => !l.completed) ?? -1);
+	const ordered = $derived.by(() => {
+		const list = (lessons.data ?? []).map((lesson, i) => ({
+			...lesson,
+			index: i,
+			state: (lesson.completed ? 'done' : i === firstOpen ? 'open' : 'locked') as
+				| 'done'
+				| 'open'
+				| 'locked'
+		}));
+		const rank = { open: 0, locked: 1, done: 2 } as const;
+		return list.sort((x, y) => rank[x.state] - rank[y.state] || x.index - y.index);
+	});
 </script>
 
 <main class="lp-container app-page">
@@ -38,15 +50,18 @@
 		<p class="app-hint">Уроки по этому отделу скоро появятся</p>
 	{:else if lessons.data}
 		<div class="mk-grid mk-grid--compact">
-			{#each lessons.data as lesson, i (lesson.slug)}
-				{@const locked = !lesson.completed && i !== firstOpen}
+			{#each ordered as lesson (lesson.slug)}
 				<MarketCard
 					title={lesson.title}
 					compact
-					class={locked ? 'mk-card--locked' : lesson.completed ? 'mk-card--done' : ''}
-					corner={locked ? 'Закрыто' : lesson.completed ? 'Пройден' : undefined}
+					class="ls-card ls-card--{lesson.state}"
 				>
-					{#snippet media()}Урок {i + 1}{/snippet}
+					{#snippet media()}
+						{#if lesson.state === 'locked'}<Lock size={12} strokeWidth={2.5} />{:else if lesson.state === 'done'}<Check
+								size={12}
+								strokeWidth={3}
+							/>{/if}Урок {lesson.index + 1}{lesson.state === 'done' ? ' · пройден' : ''}
+					{/snippet}
 					<p class="mk-card__text">
 						<Price value={lesson.reward.coins} prefix="+" /> · <Price
 							value={lesson.reward.xp}
@@ -55,15 +70,15 @@
 						/>
 					</p>
 					{#snippet foot()}
-						{#if locked}
-							<p class="mk-card__hint"><Lock size={14} strokeWidth={2.5} /> Сначала предыдущий урок</p>
-						{:else if lesson.completed}
+						{#if lesson.state === 'locked'}
+							<p class="mk-card__hint">Откроется после урока {lesson.index}</p>
+						{:else if lesson.state === 'done'}
 							<Button
 								color="gray"
 								size="small"
 								href={resolve('/(app)/app/lessons/[slug]', { slug: lesson.slug })}
 							>
-								<Check size={18} strokeWidth={2.5} />Повторить
+								Повторить
 							</Button>
 						{:else}
 							<Button

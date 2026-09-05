@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Coins, Gem, Star, Zap } from '@lucide/svelte';
+	import { Coins, Gem, Package, Star, Zap } from '@lucide/svelte';
 
 	let {
 		value,
@@ -7,11 +7,11 @@
 		prefix = ''
 	}: {
 		value: number | string;
-		kind?: 'coins' | 'premium' | 'xp' | 'energy';
+		kind?: 'coins' | 'premium' | 'xp' | 'energy' | 'box';
 		prefix?: string;
 	} = $props();
 
-	const icons = { coins: Coins, premium: Gem, xp: Star, energy: Zap };
+	const icons = { coins: Coins, premium: Gem, xp: Star, energy: Zap, box: Package };
 	const Icon = $derived(icons[kind]);
 </script>
 

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { LogOut } from '@lucide/svelte';
+	import { CircleHelp, LogOut } from '@lucide/svelte';
 	import Button from '$lib/landing/Button.svelte';
+	import { onboarding } from '$lib/onboarding/state.svelte';
 	import Price from '$lib/landing/Price.svelte';
 	import MarketCard from '$lib/market/MarketCard.svelte';
 	import { authClient } from '$lib/auth';
@@ -30,6 +31,13 @@
 	const unlockedCount = $derived(achievements.data?.filter((a) => a.unlockedAt).length ?? 0);
 
 	let busy = $state(false);
+
+	/** Сбрасывает отметки просмотра: подсказки снова покажутся на каждом экране */
+	function showHints() {
+		onboarding.reset();
+		onboarding.open('profile', true);
+	}
+
 	async function signOut() {
 		busy = true;
 		await authClient.signOut();
@@ -104,6 +112,9 @@
 		</div>
 
 		<div class="pf-actions">
+			<Button color="gray" size="small" onclick={showHints}>
+				<CircleHelp size={18} strokeWidth={2.25} />Подсказки
+			</Button>
 			<Button color="gray" size="small" disabled={busy} onclick={signOut}>
 				<LogOut size={18} strokeWidth={2.25} />Выйти
 			</Button>

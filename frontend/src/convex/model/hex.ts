@@ -22,8 +22,8 @@ export function neighbors(q: number, r: number): Array<{ q: number; r: number }>
 }
 
 export function radiusForCapacity(capacity: number): number {
-	if (capacity >= 37) return 3;
-	if (capacity >= 19) return 2;
+	if (capacity > 12) return 3;
+	if (capacity > 5) return 2;
 	return 1;
 }
 

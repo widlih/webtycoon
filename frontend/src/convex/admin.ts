@@ -5,6 +5,8 @@ const playerTables = [
 	'skills',
 	'offices',
 	'rooms',
+	'inventory',
+	'payrolls',
 	'orders',
 	'offerSlots',
 	'ledger',
@@ -13,6 +15,7 @@ const playerTables = [
 	'quizRuns',
 	'coupons',
 	'playerBoosts',
+	'boxOpens',
 	'questProgress',
 	'achievementProgress',
 	'scores'

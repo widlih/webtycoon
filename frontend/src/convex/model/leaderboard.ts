@@ -22,29 +22,38 @@ export async function addScore(ctx: MutationCtx, playerId: Id<'players'>, xp: nu
 	}
 }
 
-export async function top(
-	ctx: QueryCtx | MutationCtx,
-	board: string,
-	period: string,
-	limit = LEADERBOARD_SIZE
-) {
+async function ranking(ctx: QueryCtx | MutationCtx, board: string, period: string) {
 	const rows = await ctx.db
 		.query('scores')
 		.withIndex('by_board_period_score', (q) => q.eq('board', board).eq('periodKey', period))
 		.order('desc')
-		.take(limit);
+		.collect();
+	const scored = new Set(rows.map((row) => row.playerId));
+	const idle = (await ctx.db.query('players').collect())
+		.filter((player) => !scored.has(player._id))
+		.sort((a, b) => b.createdAt - a.createdAt);
 	const result = [];
-	for (const [index, row] of rows.entries()) {
+	for (const row of rows) {
 		const player = await ctx.db.get(row.playerId);
 		result.push({
-			rank: index + 1,
 			playerId: row.playerId,
 			nick: player?.nick ?? '',
 			level: player?.level ?? 1,
 			score: row.score
 		});
 	}
-	return result;
+	for (const player of idle)
+		result.push({ playerId: player._id, nick: player.nick, level: player.level, score: 0 });
+	return result.map((row, index) => ({ rank: index + 1, ...row }));
+}
+
+export async function top(
+	ctx: QueryCtx | MutationCtx,
+	board: string,
+	period: string,
+	limit = LEADERBOARD_SIZE
+) {
+	return (await ranking(ctx, board, period)).slice(0, limit);
 }
 
 export async function myScore(
@@ -53,34 +62,30 @@ export async function myScore(
 	period: string,
 	playerId: Id<'players'>
 ) {
-	const mine = await ctx.db
-		.query('scores')
-		.withIndex('by_board_period_player', (q) =>
-			q.eq('board', board).eq('periodKey', period).eq('playerId', playerId)
-		)
-		.unique();
-	if (!mine) return null;
-	const above = await ctx.db
-		.query('scores')
-		.withIndex('by_board_period_score', (q) =>
-			q.eq('board', board).eq('periodKey', period).gt('score', mine.score)
-		)
-		.collect();
-	return { rank: above.length + 1, score: mine.score };
+	const me = (await ranking(ctx, board, period)).find((row) => row.playerId === playerId);
+	return me ? { rank: me.rank, score: me.score } : null;
 }
 
-export async function closeDay(ctx: MutationCtx, period: string) {
+export type Winners = Awaited<ReturnType<typeof top>>;
+
+/** Фиксирует итоги периода в снапшоте. Повторный вызов возвращает уже сохранённый список. */
+export async function closePeriod(
+	ctx: MutationCtx,
+	period: BoardPeriod,
+	key: string
+): Promise<{ winners: Winners; fresh: boolean }> {
+	const board = BOARDS[period];
 	const existing = await ctx.db
 		.query('daySnapshots')
-		.withIndex('by_board_period', (q) => q.eq('board', BOARDS.day).eq('periodKey', period))
+		.withIndex('by_board_period', (q) => q.eq('board', board).eq('periodKey', key))
 		.unique();
-	if (existing) return existing.top as Awaited<ReturnType<typeof top>>;
-	const winners = await top(ctx, BOARDS.day, period);
+	if (existing) return { winners: existing.top as Winners, fresh: false };
+	const winners = (await top(ctx, board, key)).filter((row) => row.score > 0);
 	await ctx.db.insert('daySnapshots', {
-		board: BOARDS.day,
-		periodKey: period,
+		board,
+		periodKey: key,
 		closedAt: Date.now(),
 		top: winners
 	});
-	return winners;
+	return { winners, fresh: true };
 }

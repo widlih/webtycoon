@@ -3,12 +3,14 @@
 	import type { IntersectionEvent } from '@threlte/extras';
 	import { Color } from 'three';
 	import { Tween } from 'svelte/motion';
-	import { cubicOut } from 'svelte/easing';
+	import { backOut, cubicOut } from 'svelte/easing';
 	import type { OfficeView, RoomView } from '../../convex/office';
 	import { DESK_POSITION } from '../../convex/model/constants';
 	import { hexToWorld } from '../../convex/model/hex';
 	import Furniture from './Furniture.svelte';
-	import Worker, { type WorkerMode } from './Worker.svelte';
+	import type { WorkerMode } from './Worker.svelte';
+	import WorkerSprite from './WorkerSprite.svelte';
+	import { portrait } from '$lib/market/people';
 	import { hexGeometry } from './models/hexGeometry';
 	import { posterTexture } from './models/posters';
 
@@ -19,6 +21,7 @@
 		rim = 0.14,
 		selected,
 		workerMode = 'idle',
+		fresh = false,
 		onselect
 	}: {
 		room: RoomView;
@@ -27,16 +30,18 @@
 		rim?: number;
 		selected: boolean;
 		workerMode?: WorkerMode;
+		fresh?: boolean;
 		onselect: () => void;
 	} = $props();
 
-	const colors: Record<string, string> = {
-		rusender: '#a981ff',
-		ucoz: '#50b8ff',
-		webask: '#ff9a3d'
-	};
+	// svelte-ignore state_referenced_locally
+	const pop = new Tween(fresh ? 0.01 : 1, { duration: 700, easing: backOut });
+	$effect(() => {
+		if (fresh) pop.set(1);
+	});
+
 	const position = $derived(hexToWorld(room.q, room.r));
-	const accent = $derived(colors[room.product] ?? '#97979b');
+	const accent = '#a981ff';
 	const pastel = $derived('#' + new Color(accent).lerp(new Color('#ffffff'), 0.74).getHexString());
 
 	const wallHeight = 2.6;
@@ -66,10 +71,11 @@
 	const rug = $derived(has('rug-round'));
 	const seated = $derived(workerMode === 'working');
 
-	const workerPos = new Tween(at(0.4, 1.5, FLOOR), { duration: 450, easing: cubicOut });
-	$effect(() => {
-		workerPos.set(seated ? at(0.85, 0, FLOOR + SEAT) : at(0.4, 1.5, FLOOR));
-	});
+	const workerUrl = $derived(
+		room.worker
+			? (portrait(room.worker.isPlayer ? 'player' : room.worker.name, 'sit') ?? '/img/worker.png')
+			: null
+	);
 
 	function posterAt(x: number, z: number) {
 		const inner = apothem - wall;
@@ -102,6 +108,7 @@
 
 <T.Group
 	position={[position.x, 0, position.z]}
+	scale={pop.current}
 	onclick={(e: IntersectionEvent<MouseEvent>) => {
 		e.stopPropagation();
 		onselect();
@@ -138,70 +145,38 @@
 		</T.Mesh>
 	{/each}
 
-	{#if rug}
-		<Furniture model="rug" position={at(0.35, 0, FLOOR + 0.001)} />
-	{/if}
-	<Furniture model="desk" position={at(0, 0, FLOOR)} rotation={FACE} />
-	<Furniture model={ergo ? 'chairDesk' : 'chair'} position={at(0.85, 0, FLOOR)} rotation={FACE} />
-	<Furniture
-		model="screen"
-		position={at(-0.16, twoScreens ? 0.28 : 0, FLOOR + DESK_TOP)}
-		rotation={FACE + Math.PI + (twoScreens ? -0.2 : 0)}
-	/>
-	{#if twoScreens}
-		<Furniture
-			model="screen"
-			position={at(-0.1, -0.62, FLOOR + DESK_TOP)}
-			rotation={FACE + Math.PI + 0.35}
-		/>
-	{/if}
-	<Furniture model="keyboard" position={at(0.18, 0, FLOOR + DESK_TOP)} rotation={FACE + Math.PI} />
-	<Furniture model="mouse" position={at(0.18, 0.5, FLOOR + DESK_TOP)} rotation={FACE + Math.PI} />
-
-	{#if room.worker}
-		{#key room.worker.name}
-			<Worker
-				name={room.worker.name}
-				isPlayer={room.worker.isPlayer}
-				mode={workerMode}
-				position={workerPos.current}
+	{#if !room.worker}
+		<Furniture model="desk" position={at(0, 0, FLOOR)} rotation={FACE} />
+		{#if !room.worker}
+			<Furniture
+				model={ergo ? 'chairDesk' : 'chair'}
+				position={at(0.85, 0, FLOOR)}
 				rotation={FACE}
 			/>
-		{/key}
+		{/if}
+		<Furniture
+			model="screen"
+			position={at(-0.16, twoScreens ? 0.28 : 0, FLOOR + DESK_TOP)}
+			rotation={FACE + Math.PI + (twoScreens ? -0.2 : 0)}
+		/>
+		{#if twoScreens}
+			<Furniture
+				model="screen"
+				position={at(-0.1, -0.62, FLOOR + DESK_TOP)}
+				rotation={FACE + Math.PI + 0.35}
+			/>
+		{/if}
+		<Furniture
+			model="keyboard"
+			position={at(0.18, 0, FLOOR + DESK_TOP)}
+			rotation={FACE + Math.PI}
+		/>
+		<Furniture model="mouse" position={at(0.18, 0.5, FLOOR + DESK_TOP)} rotation={FACE + Math.PI} />
 	{/if}
 
-	{#each slots as slot (slot.id)}
-		{@const installed = room.items.find((i) => i.slotId === slot.id)}
-		{#if !installed}
-			<T.Mesh position={[slot.x, FLOOR + 0.005, slot.z]} rotation.x={-Math.PI / 2}>
-				<T.RingGeometry args={[0.24, 0.3, 32]} />
-				<T.MeshStandardMaterial color={accent} transparent opacity={0.35} />
-			</T.Mesh>
-		{:else if installed.itemSlug === 'coffee-machine'}
-			<Furniture model="cabinet" position={[slot.x, FLOOR, slot.z]} rotation={slot.rot + FACE} />
-			<Furniture
-				model="coffee"
-				position={[slot.x, FLOOR + 1.035, slot.z]}
-				rotation={slot.rot + FACE}
-			/>
-		{:else if installed.itemSlug === 'ficus'}
-			<Furniture model="ficus" position={[slot.x, FLOOR, slot.z]} rotation={slot.rot} />
-		{:else if installed.itemSlug === 'monstera'}
-			<Furniture model="monstera" position={[slot.x, FLOOR, slot.z]} rotation={slot.rot} />
-		{:else if installed.itemSlug === 'lamp-arc'}
-			<Furniture model="lampArc" position={[slot.x, FLOOR, slot.z]} rotation={slot.rot + FACE} />
-		{:else if installed.itemSlug.startsWith('poster-')}
-			{@const p = posterAt(slot.x, slot.z)}
-			<T.Group position={p.position} rotation.y={p.rotation}>
-				<T.Mesh position={[0, 0, -0.025]} castShadow>
-					<T.BoxGeometry args={[0.92, 1.12, 0.05]} />
-					<T.MeshStandardMaterial color="#1c1c1e" roughness={0.6} />
-				</T.Mesh>
-				<T.Mesh position={[0, 0, 0.001]}>
-					<T.PlaneGeometry args={[0.8, 1]} />
-					<T.MeshStandardMaterial map={posterTexture(installed.itemSlug, accent)} roughness={0.7} />
-				</T.Mesh>
-			</T.Group>
-		{/if}
-	{/each}
+	{#if workerUrl}
+		{#key workerUrl}
+			<WorkerSprite url={workerUrl} position={at(0.45, 0.1, FLOOR + 1.0)} />
+		{/key}
+	{/if}
 </T.Group>

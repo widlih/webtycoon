@@ -3,18 +3,32 @@
 	import MarketCard from '$lib/market/MarketCard.svelte';
 	import Button from '$lib/landing/Button.svelte';
 	import Price from '$lib/landing/Price.svelte';
+	import { centerOf, flyReward } from '$lib/fx/fly';
+	import ExternalQuest from '$lib/quests/ExternalQuest.svelte';
 	import { useMutation, useQuery } from 'convex-svelte';
 	import { api } from '../../../../convex/_generated/api';
 
 	const quests = useQuery(api.quests.list, {});
 	const claim = useMutation(api.quests.claim);
+	const start = useMutation(api.quests.start);
+	const finish = useMutation(api.quests.finish);
 
 	let error = $state('');
 	let busy = $state('');
 	let now = $state(Date.now());
+	let opened = $state<string | null>(null);
+	let pending = $state<{ slug: string; until: number } | null>(null);
+
+	const labels: Record<string, string> = {
+		visit: 'Открыть',
+		watch: 'Смотреть',
+		newsletter: 'Подписаться',
+		invite: 'Пригласить',
+		telegram: 'Подписаться'
+	};
 
 	onMount(() => {
-		const id = setInterval(() => (now = Date.now()), 30000);
+		const id = setInterval(() => (now = Date.now()), 1000);
 		return () => clearInterval(id);
 	});
 
@@ -29,16 +43,43 @@
 		return `${minutes} мин`;
 	}
 
-	async function collect(slug: string) {
+	async function collect(slug: string, e?: MouseEvent) {
 		error = '';
 		busy = slug;
+		const from = centerOf((e?.currentTarget as HTMLElement | null) ?? null);
 		try {
-			await claim({ slug });
+			const reward = await claim({ slug });
+			flyReward(from, reward);
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
 		} finally {
 			busy = '';
 		}
+	}
+
+	async function openExternal(q: { slug: string; url: string | null; seconds: number }) {
+		if (!q.url) return;
+		window.open(q.url, '_blank', 'noopener');
+		error = '';
+		try {
+			await start({ slug: q.slug });
+		} catch (e) {
+			error = e instanceof Error ? e.message : String(e);
+			return;
+		}
+		pending = { slug: q.slug, until: Date.now() + q.seconds * 1000 };
+		setTimeout(
+			async () => {
+				try {
+					await finish({ slug: q.slug });
+				} catch (e) {
+					error = e instanceof Error ? e.message : String(e);
+				} finally {
+					pending = null;
+				}
+			},
+			q.seconds * 1000 + 300
+		);
 	}
 
 	const groups = $derived([
@@ -58,8 +99,8 @@
 		},
 		{
 			key: 'once',
-			title: 'Акции',
-			hint: 'Постоянный набор, каждая выполняется один раз',
+			title: 'Специальные предложения',
+			hint: '',
 			empty: 'Все акции выполнены',
 			items: quests.data?.quests.filter((q) => q.period === 'once') ?? []
 		}
@@ -74,10 +115,8 @@
 	{:else if quests.data}
 		{#each groups as group (group.key)}
 			<h2 class="mk-h">{group.title}</h2>
-			<p class="mk-sub">{group.hint}</p>
-			{#if group.items.length === 0}
-				<p class="app-muted mk-note" style="margin-top:0">{group.empty}</p>
-			{:else}
+			{#if group.hint}<p class="mk-sub">{group.hint}</p>{/if}
+			{#if group.items.length > 0}
 				<div class="mk-grid mk-grid--compact">
 					{#each group.items as q (q.slug)}
 						{@const ratio = Math.min(1, q.progress / q.target)}
@@ -85,7 +124,7 @@
 							title={q.title}
 							compact
 							class="mk-card--quest"
-							corner={q.kind === 'external' && !q.completed ? 'Скоро' : undefined}
+							corner={q.action === 'telegram' && !quests.data.telegramBot ? 'Скоро' : undefined}
 						>
 							{#snippet media()}<Price value={q.reward.coins} prefix="+" /> · <Price
 									value={q.reward.xp}
@@ -104,9 +143,28 @@
 										color="black"
 										size="small"
 										disabled={busy === q.slug}
-										onclick={() => collect(q.slug)}
+										onclick={(e) => collect(q.slug, e)}
 									>
 										Получить
+									</Button>
+								{:else if q.kind === 'external' && q.action === 'visit' && !q.frame}
+									{#if pending?.slug === q.slug}
+										<span class="mk-meta"
+											>Награда через {Math.max(0, Math.ceil((pending.until - now) / 1000))} с</span
+										>
+									{:else}
+										<Button color="black" size="small" onclick={() => openExternal(q)}
+											>Открыть</Button
+										>
+									{/if}
+								{:else if q.kind === 'external' && q.action}
+									<Button
+										color="black"
+										size="small"
+										disabled={q.action === 'telegram' && !quests.data.telegramBot}
+										onclick={() => (opened = q.slug)}
+									>
+										{labels[q.action] ?? 'Открыть'}
 									</Button>
 								{/if}
 							{/snippet}
@@ -117,6 +175,16 @@
 		{/each}
 		{#if error}
 			<p class="app-error mk-note">{error}</p>
+		{/if}
+		{#if opened}
+			{@const q = quests.data.quests.find((x) => x.slug === opened)}
+			{#if q}
+				<ExternalQuest
+					quest={q}
+					telegramBot={quests.data.telegramBot}
+					onclose={() => (opened = null)}
+				/>
+			{/if}
 		{/if}
 	{/if}
 </main>

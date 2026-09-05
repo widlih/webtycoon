@@ -34,12 +34,13 @@
 		{@const affordable = coins >= tier.price}
 		<MarketCard
 			title={tier.title}
+			image={`/img/offices/tier-${tier.tier}.webp`}
 			big={`${tier.hexCapacity}`}
-			text="{tier.hexCapacity} гексов, {tier.slotsPerRoom} слотов в комнате"
+			text="до {tier.hexCapacity} комнат, {tier.slotsPerRoom} слотов в комнате"
 			price={next ? tier.price : undefined}
 			disabled={busy || !affordable}
 			hint={next ? undefined : `После ${OFFICE_TIERS.find((t) => t.tier === tier.tier - 1)?.title}`}
-			class={next ? '' : 'mk-card--done'}
+			class="mk-card--figure {next ? '' : 'mk-card--done'}"
 			onbuy={() => buy(tier.tier)}
 		/>
 	{/each}

@@ -1,0 +1,163 @@
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+	.app .lp-container {
+		width: calc(100% - 48px);
+		max-width: 720px;
+	}
+	.app-scene {
+		height: 56vh;
+	}
+}
+@media screen and (max-width: 1024px) {
+	.app-toolbar {
+		flex-wrap: wrap;
+	}
+	.app-toolbar > .app-muted {
+		white-space: nowrap;
+	}
+}
+@media screen and (max-width: 767px) {
+	.app {
+		padding-bottom: 96px;
+	}
+	.app-header {
+		padding-top: 10px;
+	}
+	.app-header__bar {
+		height: 56px;
+		padding: 0 12px 0 16px;
+		gap: 10px;
+		border-radius: 16px;
+	}
+	.app-header__logo {
+		font-size: 18px;
+		letter-spacing: -0.72px;
+	}
+	.app-header__stats {
+		gap: 6px;
+		min-width: 0;
+	}
+	.app-pill {
+		height: 32px;
+		padding: 0 10px;
+		gap: 5px;
+		font-size: 13px;
+		letter-spacing: -0.26px;
+	}
+	.app-pill svg.lucide {
+		width: 15px;
+		height: 15px;
+	}
+	.app-pill--player {
+		padding-left: 3px;
+	}
+	.app-pill__avatar {
+		width: 26px;
+		height: 26px;
+		font-size: 12px;
+	}
+	.app-pill__sub {
+		font-size: 12px;
+	}
+	.app-page {
+		padding-top: 16px;
+	}
+	.app-toolbar {
+		padding: 0 0 16px;
+		gap: 10px;
+	}
+	.app-toolbar__group {
+		flex-wrap: nowrap;
+		max-width: 100%;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+	.app-toolbar__group::-webkit-scrollbar {
+		display: none;
+	}
+	.app-toolbar .app-chip {
+		white-space: nowrap;
+	}
+	.app-scene {
+		height: 58vh;
+		min-height: 380px;
+		border-radius: 28px;
+	}
+	.app-scene__title {
+		left: 16px;
+		top: 14px;
+		font-size: 17px;
+	}
+	.app-scene__hint {
+		display: none;
+	}
+	.app-sheet {
+		left: 8px;
+		right: 8px;
+		bottom: 8px;
+		height: 64%;
+		padding: 18px 16px;
+		border-radius: 24px;
+	}
+	.app-panel {
+		padding: 20px;
+		border-radius: 28px;
+	}
+	.app-panel__title {
+		font-size: 20px;
+	}
+	.app-modal__box {
+		padding: 22px 18px;
+		border-radius: 28px 28px 0 0;
+		max-height: 92vh;
+	}
+	.app-modal__box--wide {
+		height: 92vh;
+	}
+	.app-row {
+		padding: 14px 16px;
+	}
+	.mk-card {
+		border-radius: 24px;
+	}
+	.mk-card__media {
+		padding: 20px;
+	}
+	.mk-h {
+		font-size: 22px;
+	}
+	.quiz__q {
+		padding: 16px;
+	}
+	.lesson__widget {
+		padding: 14px;
+		border-radius: 24px;
+	}
+}
+@media screen and (max-width: 420px) {
+	.app-pill__sub {
+		display: none;
+	}
+	.app-pill {
+		padding: 0 8px;
+	}
+}
+@media screen and (max-width: 1024px) {
+	.app-nav__bar {
+		padding: 0 6px;
+		justify-content: stretch;
+	}
+	.app-nav__link {
+		flex: 1 1 0;
+		min-width: 0;
+		justify-content: center;
+		text-align: center;
+		padding: 0 2px;
+		position: relative;
+	}
+	.app-nav__link span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 100%;
+	}
+}

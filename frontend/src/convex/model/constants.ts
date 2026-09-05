@@ -20,9 +20,9 @@ export function levelForXp(xp: number): number {
 export const MAX_SKILL_LEVEL = 5;
 
 export const OFFICE_TIERS = [
-	{ tier: 1, title: 'Гараж', hexCapacity: 7, slotsPerRoom: 3, price: 0 },
-	{ tier: 2, title: 'Офис', hexCapacity: 19, slotsPerRoom: 5, price: 6000 },
-	{ tier: 3, title: 'Кампус', hexCapacity: 37, slotsPerRoom: 7, price: 30000 }
+	{ tier: 1, title: 'Гараж', hexCapacity: 5, slotsPerRoom: 3, price: 0 },
+	{ tier: 2, title: 'Офис', hexCapacity: 12, slotsPerRoom: 5, price: 6000 },
+	{ tier: 3, title: 'Кампус', hexCapacity: 24, slotsPerRoom: 7, price: 30000 }
 ] as const;
 
 export const DESK_POSITION = { x: 0, z: 0 } as const;
@@ -57,16 +57,34 @@ export function periodKey(now: number): string {
 export const QUIZ_BONUS_MULTIPLIER = 1.25;
 export const MAX_ITEM_SPEED_BONUS = 0.5;
 
-export const DAILY_PRIZES = [500, 300, 150];
 export const LEADERBOARD_SIZE = 20;
 
 export const ENERGY_MAX = 8;
 export const ENERGY_REGEN_MS = 30 * 60 * 1000;
 export const QUIZ_ENERGY_COST = 1;
 export const ENERGY_REFILL_PREMIUM = 5;
-export const DAILY_PREMIUM_PRIZES = [10, 6, 3];
 export const BOARDS = { day: 'daily_xp', week: 'weekly_xp', month: 'monthly_xp' } as const;
 export type BoardPeriod = keyof typeof BOARDS;
+
+export type LeaderboardPrize = { coins: number; premium: number; boxes: number };
+/** Призы за 1–3 места по итогам периода. Боксы открываются бесплатно во вкладке «Бокс». */
+export const LEADERBOARD_PRIZES: Record<BoardPeriod, LeaderboardPrize[]> = {
+	day: [
+		{ coins: 500, premium: 0, boxes: 3 },
+		{ coins: 300, premium: 0, boxes: 2 },
+		{ coins: 150, premium: 0, boxes: 1 }
+	],
+	week: [
+		{ coins: 2500, premium: 0, boxes: 6 },
+		{ coins: 1500, premium: 0, boxes: 4 },
+		{ coins: 800, premium: 0, boxes: 2 }
+	],
+	month: [
+		{ coins: 10000, premium: 0, boxes: 12 },
+		{ coins: 6000, premium: 0, boxes: 8 },
+		{ coins: 3000, premium: 0, boxes: 4 }
+	]
+};
 
 export function weekKey(now: number): string {
 	const d = new Date(now + TIMEZONE_OFFSET_MS);

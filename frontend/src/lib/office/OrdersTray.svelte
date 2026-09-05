@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ClipboardList, Globe, Hourglass, Lock, Send } from '@lucide/svelte';
+	import { ClipboardList, Globe, Hourglass, Lock, RefreshCw, Send } from '@lucide/svelte';
 	import { animate } from 'animejs';
 	import { useMutation, useQuery } from 'convex-svelte';
 	import { onMount } from 'svelte';
@@ -14,6 +14,7 @@
 	const data = useQuery(api.orders.slots, {});
 	const refill = useMutation(api.orders.refill);
 	const unlock = useMutation(api.orders.unlock);
+	const swap = useMutation(api.orders.swap);
 
 	const productIcons = { rusender: Send, ucoz: Globe, webask: ClipboardList } as const;
 
@@ -39,6 +40,7 @@
 		start = { x: event.clientX, y: event.clientY, moved: false };
 		ordersUi.drag = {
 			id: offer._id,
+			kind: 'offer',
 			product: offer.product,
 			title: offer.title,
 			x: event.clientX,
@@ -81,7 +83,7 @@
 			}
 			ordersUi.drag = null;
 			ordersUi.selectedOffer = null;
-			await onassign(drag.id, roomId);
+			await onassign(drag.id as Id<'offerSlots'>, roomId);
 			return;
 		}
 		ordersUi.drag = null;
@@ -93,9 +95,26 @@
 		ordersUi.hoverRoomId = null;
 	}
 
-	function toggle(offer: { id: Id<'offerSlots'>; product: string }) {
+	function toggle(offer: { id: string; product?: string }) {
 		ordersUi.selectedOffer =
-			ordersUi.selectedOffer?.id === offer.id ? null : { id: offer.id, product: offer.product };
+			ordersUi.selectedOffer?.id === offer.id
+				? null
+				: { id: offer.id, kind: 'offer', product: offer.product };
+	}
+
+	async function swapOffer(slotId: Id<'offerSlots'>) {
+		unlockError = '';
+		try {
+			await swap({ slotId });
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			unlockError = message.includes('SWAP_USED')
+				? 'Замена уже использована'
+				: message.includes('NO_ALTERNATIVE')
+					? 'Другого заказа пока нет'
+					: message;
+			setTimeout(() => (unlockError = ''), 2500);
+		}
 	}
 
 	async function buySlot() {
@@ -115,11 +134,12 @@
 		<div class="tray__toast app-tag">{unlockError}</div>
 	{/if}
 	<div class="tray__cards">
+		<img class="tray__sign" src="/img/divly-sign.webp" alt="divly" draggable="false" />
 		{#each data.data?.slots ?? [] as slot (slot._id)}
 			{#if slot.offer}
 				{@const ProductIcon = productIcons[slot.offer.product as keyof typeof productIcons] ?? Send}
 				<div
-					class="card"
+					class="card card--{slot.offer.product}"
 					class:is-selected={ordersUi.selectedOffer?.id === slot._id}
 					class:is-dragging={ordersUi.drag?.id === slot._id}
 					role="button"
@@ -136,10 +156,31 @@
 						}
 					}}
 				>
-					<div class="card__head">
-						<span class="card__icon"><ProductIcon size={16} strokeWidth={2.25} /></span>
-						<span class="card__title">{slot.offer.title}</span>
+					<div class="card__brand">
+						{#if slot.offer.product in productIcons}
+							<img
+								class="card__logo"
+								src="/img/logos/{slot.offer.product}.svg"
+								alt={slot.offer.product}
+								draggable="false"
+							/>
+						{:else}
+							<span class="card__icon"><ProductIcon size={16} strokeWidth={2.25} /></span>
+						{/if}
+						{#if !slot.swapped}
+							<button
+								type="button"
+								class="card__swap"
+								aria-label="Заменить заказ"
+								data-tip="Заменить заказ, один раз бесплатно"
+								onpointerdown={(e) => e.stopPropagation()}
+								onclick={() => swapOffer(slot._id)}
+							>
+								<RefreshCw size={14} strokeWidth={2.25} />
+							</button>
+						{/if}
 					</div>
+					<span class="card__title">{slot.offer.title}</span>
 					<div class="card__foot">
 						<span class="card__time"
 							><Hourglass size={14} strokeWidth={2.25} />{slot.offer.durationMin} мин</span
@@ -151,7 +192,7 @@
 					</div>
 				</div>
 			{:else}
-				<div class="card card--wait">
+				<div class="card card--wait" data-tip="Новый заказ появится, когда закончится таймер">
 					<Hourglass size={18} strokeWidth={2.25} />
 					<span class="card__timer">{formatRemaining((slot.readyAt ?? now) - now)}</span>
 				</div>
@@ -160,12 +201,19 @@
 		{#if data.data}
 			{#each Array.from({ length: data.data.max - data.data.unlocked }, (_, k) => k) as i (i)}
 				{#if i === 0 && data.data.nextPrice !== null}
-					<button type="button" class="card card--lock card--next" onclick={buySlot}>
+					<button
+						type="button"
+						class="card card--lock card--next"
+						data-tip="Открыть ещё один слот заказов"
+						onclick={buySlot}
+					>
 						<Lock size={18} strokeWidth={2.25} />
 						<Price value={data.data.nextPrice} />
 					</button>
 				{:else}
-					<div class="card card--lock"><Lock size={18} strokeWidth={2.25} /></div>
+					<div class="card card--lock" data-tip="Откроется после покупки предыдущего слота">
+						<Lock size={18} strokeWidth={2.25} />
+					</div>
 				{/if}
 			{/each}
 		{/if}
@@ -198,24 +246,36 @@
 	}
 	.tray__cards {
 		display: grid;
-		grid-template-columns: repeat(5, minmax(0, 1fr));
+		grid-template-columns: 150px repeat(5, minmax(0, 1fr));
 		gap: 8px;
+		align-items: end;
+		max-width: 1240px;
+		margin: 0 auto;
 		pointer-events: auto;
+	}
+	.tray__sign {
+		display: block;
+		width: 150px;
+		height: 120px;
+		object-fit: contain;
+		object-position: center bottom;
+		pointer-events: none;
+		user-select: none;
 	}
 	.card {
 		box-sizing: border-box;
-		height: 92px;
+		min-height: 84px;
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
-		gap: 6px;
-		padding: 12px;
+		gap: 4px;
+		padding: 10px;
 		border: 0;
-		border-radius: 20px;
+		border-radius: 16px;
 		background: #fff;
 		color: var(--ink, #111);
-		font: 400 13px/130% var(--text-font, system-ui);
-		letter-spacing: -0.26px;
+		font: 400 12px/130% var(--text-font, system-ui);
+		letter-spacing: -0.24px;
 		text-align: left;
 		box-shadow:
 			0 2px 5px #0000000a,
@@ -239,6 +299,36 @@
 		gap: 8px;
 		min-width: 0;
 	}
+	.card--rusender {
+		--brand: #a981ff;
+		--brand-soft: #efe8ff;
+	}
+	.card--ucoz {
+		--brand: #50b8ff;
+		--brand-soft: #e2f2ff;
+	}
+	.card--webask {
+		--brand: #ff9a3d;
+		--brand-soft: #ffeedd;
+	}
+	.card__brand {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		margin: -10px -10px 2px;
+		padding: 7px 10px 6px;
+		border-radius: 16px 16px 0 0;
+		background: var(--brand-soft, #f1f0f4);
+		box-shadow: inset 0 -2px 0 var(--brand, transparent);
+	}
+	.card__logo {
+		display: block;
+		height: 15px;
+		width: auto;
+		max-width: 100px;
+		pointer-events: none;
+	}
 	.card__icon {
 		flex: none;
 		display: inline-flex;
@@ -250,12 +340,31 @@
 		background: #f1f0f4;
 		color: #6b5bd6;
 	}
+	.card__swap {
+		flex: none;
+		margin-left: auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		height: 24px;
+		padding: 0;
+		border: 0;
+		border-radius: 8px;
+		background: transparent;
+		color: var(--muted, #8a8a90);
+		cursor: pointer;
+	}
+	.card__swap:hover {
+		background: #f1f0f4;
+		color: var(--ink, #111);
+	}
 	.card__title {
-		font: 600 13px/130% var(--display, system-ui);
-		letter-spacing: -0.26px;
+		font: 600 12px/130% var(--display, system-ui);
+		letter-spacing: -0.24px;
 		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		line-clamp: 2;
+		-webkit-line-clamp: 1;
+		line-clamp: 1;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
@@ -263,7 +372,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 8px;
+		gap: 4px 8px;
+		flex-wrap: wrap;
 		min-width: 0;
 	}
 	.card__time {
@@ -282,6 +392,9 @@
 	}
 	.card--wait,
 	.card--lock {
+		min-width: 0;
+		overflow: hidden;
+		justify-content: center;
 		background: transparent;
 		box-shadow: none;
 		border: 1.5px dashed #b8b8be;
@@ -304,11 +417,36 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-	@media (max-width: 640px) {
+	@media (max-width: 1440px) {
+		.tray__cards {
+			grid-template-columns: repeat(5, minmax(0, 1fr));
+		}
+		.tray__sign {
+			display: none;
+		}
+		.card__reward :global(.app-price + .app-price) {
+			display: none;
+		}
+	}
+	@media (max-width: 1024px) {
+		.tray__cards {
+			grid-template-columns: none;
+			grid-auto-flow: column;
+			grid-auto-columns: 160px;
+			overflow-x: auto;
+			padding-bottom: 2px;
+			scrollbar-width: none;
+		}
+		.tray__cards::-webkit-scrollbar {
+			display: none;
+		}
+		.tray__sign {
+			display: none;
+		}
 		.card {
-			height: 84px;
-			padding: 10px;
-			border-radius: 16px;
+			min-height: 72px;
+			padding: 8px;
+			border-radius: 14px;
 		}
 		.card__reward :global(.app-price + .app-price) {
 			display: none;
